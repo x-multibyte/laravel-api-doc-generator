@@ -87,4 +87,20 @@ return [
         'formats' => ['json', 'yaml'],
         'path' => storage_path('api-docs'),
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Static Generation
+    |--------------------------------------------------------------------------
+    */
+
+    'static' => [
+        'enabled' => true,
+        'output_path' => public_path('api-docs-static'),
+        'base_url' => env('API_DOCS_STATIC_BASE_URL', '/api-docs-static'),
+        'themes' => ['swagger', 'redoc', 'rapidoc', 'custom'],
+        'include_assets' => true,
+        'minify_html' => false,
+        'generate_sitemap' => true,
+    ],
 ];

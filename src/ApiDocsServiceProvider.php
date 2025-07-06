@@ -16,6 +16,8 @@ class ApiDocsServiceProvider extends ServiceProvider
         $this->app->singleton('api-docs', function ($app) {
             return new ApiDocsGenerator($app['config']['api-docs']);
         });
+    
+        $this->app->singleton(StaticGenerator::class); // 新增
     }
 
     public function boot()
@@ -67,6 +69,7 @@ class ApiDocsServiceProvider extends ServiceProvider
                 \LaravelApiDocs\Console\Commands\StatusCommand::class,
                 \LaravelApiDocs\Console\Commands\PublishCommand::class,
                 \LaravelApiDocs\Console\Commands\HelpCommand::class,
+                \LaravelApiDocs\Console\Commands\GenerateStaticCommand::class, // 新增
             ]);
         }
     }

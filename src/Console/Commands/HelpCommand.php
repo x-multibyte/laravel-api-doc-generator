@@ -90,6 +90,23 @@ class HelpCommand extends BaseCommand
                     'php artisan api-docs:publish --config --force',
                     'php artisan api-docs:publish --views --assets'
                 ]
+            ],
+            [
+                'command' => 'api-docs:static',
+                'description' => 'Generate static HTML documentation files',
+                'options' => [
+                    '--output=path' => 'Output directory path',
+                    '--themes=theme1,theme2' => 'Specific themes to generate',
+                    '--base-url=url' => 'Base URL for static files',
+                    '--minify' => 'Minify HTML output',
+                    '--no-assets' => 'Skip copying assets',
+                    '--force' => 'Overwrite existing files'
+                ],
+                'examples' => [
+                    'php artisan api-docs:static',
+                    'php artisan api-docs:static --output=/var/www/docs --minify',
+                    'php artisan api-docs:static --themes=swagger,redoc --no-assets'
+                ]
             ]
         ];
 
