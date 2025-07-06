@@ -1,12 +1,12 @@
 {
-  "name": "laravel-api-docs/generator",
+  "name": "x-multibyte/laravel-api-docs",
   "description": "Laravel API Documentation Generator with multiple UI themes and OpenAPI 3+ support",
   "type": "library",
   "license": "MIT",
   "authors": [
     {
-      "name": "Your Name",
-      "email": "your.email@example.com"
+      "name": "X-Multibyte",
+      "email": "contact@x-multibyte.com"
     }
   ],
   "require": {
@@ -22,12 +22,12 @@
   },
   "autoload": {
     "psr-4": {
-      "LaravelApiDocs\\": "src/"
+      "XMultibyte\\ApiDoc\\": "src/"
     }
   },
   "autoload-dev": {
     "psr-4": {
-      "LaravelApiDocs\\Tests\\": "tests/"
+      "XMultibyte\\ApiDoc\\Tests\\": "tests/"
     }
   },
   "scripts": {
@@ -42,7 +42,7 @@
   },
   "extra": {
     "laravel": {
-      "providers": ["LaravelApiDocs\\ApiDocsServiceProvider"]
+      "providers": ["XMultibyte\\ApiDoc\\ApiDocsServiceProvider"]
     }
   },
   "minimum-stability": "stable",

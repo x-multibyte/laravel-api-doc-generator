@@ -1,9 +1,9 @@
 <?php
 
-namespace LaravelApiDocs\Console\Commands;
+namespace XMultibyte\ApiDoc\Console\Commands;
 
 use Illuminate\Console\Command;
-use LaravelApiDocs\ApiDocsGenerator;
+use XMultibyte\ApiDoc\ApiDocsGenerator;
 
 abstract class BaseCommand extends Command
 {

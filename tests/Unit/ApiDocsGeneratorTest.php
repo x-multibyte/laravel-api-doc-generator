@@ -1,9 +1,9 @@
 <?php
 
-namespace LaravelApiDocs\Tests\Unit;
+namespace XMultibyte\ApiDoc\Tests\Unit;
 
-use LaravelApiDocs\Tests\TestCase;
-use LaravelApiDocs\ApiDocsGenerator;
+use XMultibyte\ApiDoc\Tests\TestCase;
+use XMultibyte\ApiDoc\ApiDocsGenerator;
 use Illuminate\Support\Facades\Route;
 
 class ApiDocsGeneratorTest extends TestCase

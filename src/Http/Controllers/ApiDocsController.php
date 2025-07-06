@@ -1,11 +1,11 @@
 <?php
 
-namespace LaravelApiDocs\Http\Controllers;
+namespace XMultibyte\ApiDoc\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Routing\Controller;
-use LaravelApiDocs\ApiDocsGenerator;
+use XMultibyte\ApiDoc\ApiDocsGenerator;
 
 class ApiDocsController extends Controller
 {

@@ -1,6 +1,6 @@
 <?php
 
-namespace LaravelApiDocs;
+namespace XMultibyte\ApiDoc;
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;

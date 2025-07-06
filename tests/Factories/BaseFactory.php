@@ -1,6 +1,6 @@
 <?php
 
-namespace LaravelApiDocs\Tests\Factories;
+namespace XMultibyte\ApiDoc\Tests\Factories;
 
 abstract class BaseFactory
 {

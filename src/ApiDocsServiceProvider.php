@@ -1,6 +1,6 @@
 <?php
 
-namespace LaravelApiDocs;
+namespace XMultibyte\ApiDoc;
 
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Route;
@@ -17,7 +17,7 @@ class ApiDocsServiceProvider extends ServiceProvider
             return new ApiDocsGenerator($app['config']['api-docs']);
         });
     
-        $this->app->singleton(StaticGenerator::class); // 新增
+        $this->app->singleton(StaticGenerator::class);
     }
 
     public function boot()
@@ -45,7 +45,7 @@ class ApiDocsServiceProvider extends ServiceProvider
         Route::group([
             'prefix' => config('api-docs.route_prefix', 'api-docs'),
             'middleware' => config('api-docs.middleware', ['web']),
-            'namespace' => 'LaravelApiDocs\Http\Controllers',
+            'namespace' => 'XMultibyte\ApiDoc\Http\Controllers',
         ], function () {
             Route::get('/', 'ApiDocsController@index')->name('api-docs.index');
             Route::get('/swagger', 'ApiDocsController@swagger')->name('api-docs.swagger');
@@ -63,13 +63,13 @@ class ApiDocsServiceProvider extends ServiceProvider
     {
         if ($this->app->runningInConsole()) {
             $this->commands([
-                \LaravelApiDocs\Console\Commands\GenerateDocsCommand::class,
-                \LaravelApiDocs\Console\Commands\ImportDocsCommand::class,
-                \LaravelApiDocs\Console\Commands\CleanDocsCommand::class,
-                \LaravelApiDocs\Console\Commands\StatusCommand::class,
-                \LaravelApiDocs\Console\Commands\PublishCommand::class,
-                \LaravelApiDocs\Console\Commands\HelpCommand::class,
-                \LaravelApiDocs\Console\Commands\GenerateStaticCommand::class, // 新增
+                \XMultibyte\ApiDoc\Console\Commands\GenerateDocsCommand::class,
+                \XMultibyte\ApiDoc\Console\Commands\ImportDocsCommand::class,
+                \XMultibyte\ApiDoc\Console\Commands\CleanDocsCommand::class,
+                \XMultibyte\ApiDoc\Console\Commands\StatusCommand::class,
+                \XMultibyte\ApiDoc\Console\Commands\PublishCommand::class,
+                \XMultibyte\ApiDoc\Console\Commands\HelpCommand::class,
+                \XMultibyte\ApiDoc\Console\Commands\GenerateStaticCommand::class,
             ]);
         }
     }

@@ -1,8 +1,8 @@
 <?php
 
-namespace LaravelApiDocs\Tests\Concerns;
+namespace XMultibyte\ApiDoc\Tests\Concerns;
 
-use LaravelApiDocs\Tests\Factories\FactoryManager;
+use XMultibyte\ApiDoc\Tests\Factories\FactoryManager;
 
 trait UsesFactories
 {

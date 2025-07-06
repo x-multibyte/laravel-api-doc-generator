@@ -1,8 +1,8 @@
 # Laravel API Documentation Generator
 
-[![Latest Version on Packagist](https://img.shields.io/packagist/v/laravel-api-docs/generator.svg?style=flat-square)](https://packagist.org/packages/laravel-api-docs/generator)
-[![Total Downloads](https://img.shields.io/packagist/dt/laravel-api-docs/generator.svg?style=flat-square)](https://packagist.org/packages/laravel-api-docs/generator)
-[![License](https://img.shields.io/packagist/l/laravel-api-docs/generator.svg?style=flat-square)](https://packagist.org/packages/laravel-api-docs/generator)
+[![Latest Version on Packagist](https://img.shields.io/packagist/v/x-multibyte/laravel-api-docs.svg?style=flat-square)](https://packagist.org/packages/x-multibyte/laravel-api-docs)
+[![Total Downloads](https://img.shields.io/packagist/dt/x-multibyte/laravel-api-docs.svg?style=flat-square)](https://packagist.org/packages/x-multibyte/laravel-api-docs)
+[![License](https://img.shields.io/packagist/l/x-multibyte/laravel-api-docs.svg?style=flat-square)](https://packagist.org/packages/x-multibyte/laravel-api-docs)
 
 A powerful Laravel package that automatically generates beautiful API documentation from your Laravel routes with support for multiple UI themes and OpenAPI 3+ specifications.
 
@@ -22,24 +22,35 @@ A powerful Laravel package that automatically generates beautiful API documentat
 ## 📸 Screenshots
 
 ### Swagger UI Theme
-![Swagger UI](docs/images/swagger-ui.png)
+Experience the classic API documentation interface with interactive testing capabilities.
 
-### ReDoc Theme
-![ReDoc](docs/images/redoc.png)
+![Swagger UI Theme](https://via.placeholder.com/800x400/1f2937/ffffff?text=Swagger+UI+Theme)
+
+### ReDoc Theme  
+Modern, responsive documentation layout with excellent readability.
+
+![ReDoc Theme](https://via.placeholder.com/800x400/2563eb/ffffff?text=ReDoc+Theme)
 
 ### RapiDoc Theme
-![RapiDoc](docs/images/rapidoc.png)
+Fast, lightweight documentation viewer with customizable styling.
+
+![RapiDoc Theme](https://via.placeholder.com/800x400/059669/ffffff?text=RapiDoc+Theme)
 
 ### Custom Theme
-![Custom Theme](docs/images/custom-theme.png)
+Fully customizable theme that you can modify to match your brand.
+
+![Custom Theme](https://via.placeholder.com/800x400/7c3aed/ffffff?text=Custom+Theme)
+
+> **Note**: Replace these placeholder images with actual screenshots of your themes in action. 
+> Recommended image size: 800x400px or higher resolution for better display.
 
 ## 🚀 Installation
 
 You can install the package via Composer:
 
-```bash
-composer require laravel-api-docs/generator
-```
+\`\`\`bash
+composer require x-multibyte/laravel-api-docs
+\`\`\`
 
 ### Laravel Auto-Discovery
 
@@ -49,24 +60,24 @@ The package will automatically register itself via Laravel's package auto-discov
 
 If you're using Laravel < 5.5, add the service provider to your `config/app.php`:
 
-```php
+\`\`\`php
 'providers' => [
     // ...
-    LaravelApiDocs\ApiDocsServiceProvider::class,
+    XMultibyte\ApiDoc\ApiDocsServiceProvider::class,
 ],
-```
+\`\`\`
 
 ## ⚙️ Configuration
 
 Publish the configuration file:
 
-```bash
+\`\`\`bash
 php artisan api-docs:publish --config
-```
+\`\`\`
 
 This will create a `config/api-docs.php` file where you can customize all settings:
 
-```php
+\`\`\`php
 <?php
 
 return [
@@ -87,21 +98,21 @@ return [
     
     // ... more configuration options
 ];
-```
+\`\`\`
 
 ## 🎯 Quick Start
 
 ### 1. Publish Assets
 
-```bash
+\`\`\`bash
 php artisan api-docs:publish --all
-```
+\`\`\`
 
 ### 2. Generate Documentation
 
-```bash
+\`\`\`bash
 php artisan api-docs:generate --validate
-```
+\`\`\`
 
 ### 3. View Documentation
 
@@ -124,7 +135,7 @@ The package includes a comprehensive CLI toolkit:
 
 #### Generate Documentation
 
-```bash
+\`\`\`bash
 # Basic generation
 php artisan api-docs:generate
 
@@ -142,11 +153,11 @@ php artisan api-docs:generate --exclude="api/admin/*"
 
 # Minify JSON output
 php artisan api-docs:generate --minify --force
-```
+\`\`\`
 
 #### Generate Static Documentation
 
-```bash
+\`\`\`bash
 # Generate static HTML files
 php artisan api-docs:static
 
@@ -158,11 +169,11 @@ php artisan api-docs:static --output=/var/www/docs
 
 # Minify HTML and skip assets
 php artisan api-docs:static --minify --no-assets
-```
+\`\`\`
 
 #### Import Documentation
 
-```bash
+\`\`\`bash
 # Import from file
 php artisan api-docs:import openapi.json
 
@@ -171,11 +182,11 @@ php artisan api-docs:import spec.yaml --validate --backup
 
 # Merge with existing specification
 php artisan api-docs:import external.json --merge
-```
+\`\`\`
 
 #### Status and Monitoring
 
-```bash
+\`\`\`bash
 # Check documentation status
 php artisan api-docs:status
 
@@ -184,11 +195,11 @@ php artisan api-docs:status --detailed
 
 # Route analysis
 php artisan api-docs:status --routes --files
-```
+\`\`\`
 
 #### Cleanup and Maintenance
 
-```bash
+\`\`\`bash
 # Preview cleanup (dry run)
 php artisan api-docs:clean --all --dry-run
 
@@ -197,14 +208,14 @@ php artisan api-docs:clean --backups --older-than=30
 
 # Clean cache and generated files
 php artisan api-docs:clean --cache --generated
-```
+\`\`\`
 
 #### Help and Documentation
 
-```bash
+\`\`\`bash
 # Show all available commands
 php artisan api-docs:help
-```
+\`\`\`
 
 ## 🎨 Themes
 
@@ -224,7 +235,7 @@ A fully customizable theme that you can modify to match your brand.
 
 Generate standalone HTML documentation files that can be deployed to any static hosting service:
 
-```bash
+\`\`\`bash
 # Generate static files
 php artisan api-docs:static
 
@@ -239,7 +250,7 @@ php artisan api-docs:static
 # ├── openapi.yaml            # OpenAPI spec (YAML)
 # ├── sitemap.xml             # Sitemap
 # └── assets/                 # CSS, JS, images
-```
+\`\`\`
 
 ### Deployment Options
 
@@ -255,7 +266,7 @@ php artisan api-docs:static
 
 Configure which routes to include in your documentation:
 
-```php
+\`\`\`php
 'scan_routes' => [
     'prefix' => 'api',
     'exclude' => [
@@ -264,13 +275,13 @@ Configure which routes to include in your documentation:
         'nova-api',
     ],
 ],
-```
+\`\`\`
 
 ### OpenAPI Configuration
 
 Customize your OpenAPI specification:
 
-```php
+\`\`\`php
 'openapi' => [
     'version' => '3.0.3',
     'servers' => [
@@ -287,11 +298,11 @@ Customize your OpenAPI specification:
         ],
     ],
 ],
-```
+\`\`\`
 
 ### Static Generation Configuration
 
-```php
+\`\`\`php
 'static' => [
     'enabled' => true,
     'output_path' => public_path('api-docs-static'),
@@ -301,15 +312,15 @@ Customize your OpenAPI specification:
     'minify_html' => false,
     'generate_sitemap' => true,
 ],
-```
+\`\`\`
 
 ### Middleware Configuration
 
 Protect your documentation with middleware:
 
-```php
+\`\`\`php
 'middleware' => ['web', 'auth', 'admin'],
-```
+\`\`\`
 
 ## 🎯 Customization
 
@@ -317,9 +328,9 @@ Protect your documentation with middleware:
 
 Publish and customize the view templates:
 
-```bash
+\`\`\`bash
 php artisan api-docs:publish --views
-```
+\`\`\`
 
 Views will be published to `resources/views/vendor/api-docs/` where you can customize:
 
@@ -333,9 +344,9 @@ Views will be published to `resources/views/vendor/api-docs/` where you can cust
 
 Publish assets and customize the styling:
 
-```bash
+\`\`\`bash
 php artisan api-docs:publish --assets
-```
+\`\`\`
 
 Assets will be published to `public/vendor/api-docs/` where you can modify CSS and JavaScript files.
 
@@ -345,7 +356,7 @@ Assets will be published to `public/vendor/api-docs/` where you can modify CSS a
 
 The main generator class provides methods for:
 
-```php
+\`\`\`php
 // Generate OpenAPI specification
 $spec = app('api-docs')->generate();
 
@@ -360,13 +371,13 @@ app('api-docs')->importFromJson($jsonString);
 
 // Import from YAML
 app('api-docs')->importFromYaml($yamlString);
-```
+\`\`\`
 
 ### Route Helpers
 
 Access documentation routes programmatically:
 
-```php
+\`\`\`php
 // Get documentation URL
 $url = route('api-docs.index');
 
@@ -378,21 +389,21 @@ $yamlUrl = route('api-docs.spec.yaml');
 $swaggerUrl = route('api-docs.swagger');
 $redocUrl = route('api-docs.redoc');
 $rapidocUrl = route('api-docs.rapidoc');
-```
+\`\`\`
 
 ## 🧪 Testing
 
 Run the test suite:
 
-```bash
+\`\`\`bash
 composer test
-```
+\`\`\`
 
 Run tests with coverage:
 
-```bash
+\`\`\`bash
 composer test-coverage
-```
+\`\`\`
 
 ## 📊 Performance
 
@@ -413,55 +424,55 @@ The package automatically caches generated documentation to improve performance.
 
 Protect your documentation with middleware:
 
-```php
+\`\`\`php
 'middleware' => ['web', 'auth:admin'],
-```
+\`\`\`
 
 ### Environment Configuration
 
 Use environment variables for sensitive configuration:
 
-```env
+\`\`\`env
 API_DOCS_TITLE="My API Documentation"
 API_DOCS_VERSION="1.0.0"
 API_DOCS_DESCRIPTION="Internal API Documentation"
-```
+\`\`\`
 
 ## 🚀 Deployment
 
 ### Production Setup
 
 1. **Publish Configuration**:
-   ```bash
+   \`\`\`bash
    php artisan api-docs:publish --config
-   ```
+   \`\`\`
 
 2. **Generate Documentation**:
-   ```bash
+   \`\`\`bash
    php artisan api-docs:generate --validate --minify
-   ```
+   \`\`\`
 
 3. **Generate Static Files** (optional):
-   ```bash
+   \`\`\`bash
    php artisan api-docs:static --minify
-   ```
+   \`\`\`
 
 4. **Configure Caching**:
-   ```bash
+   \`\`\`bash
    php artisan config:cache
    php artisan route:cache
-   ```
+   \`\`\`
 
 ### CI/CD Integration
 
 Add to your deployment script:
 
-```bash
+\`\`\`bash
 #!/bin/bash
 php artisan api-docs:generate --validate --force
 php artisan api-docs:static --force
 php artisan api-docs:clean --cache --older-than=7
-```
+\`\`\`
 
 ## 🤝 Contributing
 
@@ -470,20 +481,20 @@ We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for deta
 ### Development Setup
 
 1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/laravel-api-docs/generator.git
-   cd generator
-   ```
+   \`\`\`bash
+   git clone https://github.com/x-multibyte/laravel-api-docs.git
+   cd laravel-api-docs
+   \`\`\`
 
 2. **Install dependencies**:
-   ```bash
+   \`\`\`bash
    composer install
-   ```
+   \`\`\`
 
 3. **Run tests**:
-   ```bash
+   \`\`\`bash
    composer test
-   ```
+   \`\`\`
 
 ### Coding Standards
 
@@ -498,7 +509,7 @@ Please see [CHANGELOG.md](CHANGELOG.md) for more information on what has changed
 
 ## 🔐 Security
 
-If you discover any security-related issues, please email security@laravel-api-docs.com instead of using the issue tracker.
+If you discover any security-related issues, please email security@x-multibyte.com instead of using the issue tracker.
 
 ## 📄 License
 
@@ -506,7 +517,7 @@ The MIT License (MIT). Please see [License File](LICENSE.md) for more informatio
 
 ## 🙏 Credits
 
-- **Author**: [Your Name](https://github.com/yourusername)
+- **Author**: [X-Multibyte](https://github.com/x-multibyte)
 - **Contributors**: [All Contributors](../../contributors)
 
 ### Built With
@@ -520,20 +531,20 @@ The MIT License (MIT). Please see [License File](LICENSE.md) for more informatio
 ## 🌟 Support
 
 - ⭐ **Star this repository** if you find it helpful
-- 🐛 **Report bugs** via [GitHub Issues](https://github.com/laravel-api-docs/generator/issues)
-- 💡 **Request features** via [GitHub Discussions](https://github.com/laravel-api-docs/generator/discussions)
-- 📖 **Read the documentation** at [docs.laravel-api-docs.com](https://docs.laravel-api-docs.com)
+- 🐛 **Report bugs** via [GitHub Issues](https://github.com/x-multibyte/laravel-api-docs/issues)
+- 💡 **Request features** via [GitHub Discussions](https://github.com/x-multibyte/laravel-api-docs/discussions)
+- 📖 **Read the documentation** at [docs.x-multibyte.com](https://docs.x-multibyte.com)
 
 ## 📞 Community
 
-- **Discord**: [Join our Discord server](https://discord.gg/laravel-api-docs)
-- **Twitter**: [@LaravelApiDocs](https://twitter.com/LaravelApiDocs)
-- **Blog**: [blog.laravel-api-docs.com](https://blog.laravel-api-docs.com)
+- **Discord**: [Join our Discord server](https://discord.gg/x-multibyte)
+- **Twitter**: [@XMultibyte](https://twitter.com/XMultibyte)
+- **Blog**: [blog.x-multibyte.com](https://blog.x-multibyte.com)
 
 ---
 
 <p align="center">
-  <strong>Made with ❤️ for the Laravel community</strong>
+  <strong>Made with ❤️ by X-Multibyte</strong>
 </p>
 
 <p align="center">

@@ -1,9 +1,9 @@
 <?php
 
-namespace LaravelApiDocs\Tests;
+namespace XMultibyte\ApiDoc\Tests;
 
-use LaravelApiDocs\ApiDocsServiceProvider;
-use LaravelApiDocs\Tests\Concerns\UsesFactories;
+use XMultibyte\ApiDoc\ApiDocsServiceProvider;
+use XMultibyte\ApiDoc\Tests\Concerns\UsesFactories;
 use Orchestra\Testbench\TestCase as Orchestra;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
