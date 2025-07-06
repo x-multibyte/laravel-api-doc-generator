@@ -16,6 +16,7 @@ A powerful Laravel package that automatically generates beautiful API documentat
 - 🧹 **Management Tools**: Complete CLI toolkit for documentation management
 - 🔍 **Validation**: Built-in OpenAPI specification validation
 - 💾 **Backup System**: Automatic backup and restore functionality
+- 📄 **Static Generation**: Generate standalone HTML documentation files
 - 🚀 **Easy Integration**: Simple installation and setup process
 
 ## 📸 Screenshots
@@ -143,6 +144,22 @@ php artisan api-docs:generate --exclude="api/admin/*"
 php artisan api-docs:generate --minify --force
 \`\`\`
 
+#### Generate Static Documentation
+
+\`\`\`bash
+# Generate static HTML files
+php artisan api-docs:static
+
+# Generate specific themes
+php artisan api-docs:static --themes=swagger,redoc
+
+# Specify output directory
+php artisan api-docs:static --output=/var/www/docs
+
+# Minify HTML and skip assets
+php artisan api-docs:static --minify --no-assets
+\`\`\`
+
 #### Import Documentation
 
 \`\`\`bash
@@ -203,6 +220,35 @@ A fast, lightweight documentation viewer with customizable styling.
 ### Custom Theme
 A fully customizable theme that you can modify to match your brand.
 
+## 📄 Static Documentation Generation
+
+Generate standalone HTML documentation files that can be deployed to any static hosting service:
+
+\`\`\`bash
+# Generate static files
+php artisan api-docs:static
+
+# Output structure:
+# output-directory/
+# ├── index.html              # Main page
+# ├── swagger.html            # Swagger UI theme
+# ├── redoc.html              # ReDoc theme
+# ├── rapidoc.html            # RapiDoc theme
+# ├── custom.html             # Custom theme
+# ├── openapi.json            # OpenAPI spec (JSON)
+# ├── openapi.yaml            # OpenAPI spec (YAML)
+# ├── sitemap.xml             # Sitemap
+# └── assets/                 # CSS, JS, images
+\`\`\`
+
+### Deployment Options
+
+- **GitHub Pages**: Upload to `gh-pages` branch
+- **Netlify**: Drag and drop the output folder
+- **Vercel**: Deploy with `vercel --prod`
+- **AWS S3**: Sync to S3 bucket with CloudFront
+- **Any CDN**: Upload files to your preferred CDN
+
 ## 🔧 Advanced Configuration
 
 ### Route Scanning
@@ -240,6 +286,20 @@ Customize your OpenAPI specification:
             'bearerFormat' => 'JWT',
         ],
     ],
+],
+\`\`\`
+
+### Static Generation Configuration
+
+\`\`\`php
+'static' => [
+    'enabled' => true,
+    'output_path' => public_path('api-docs-static'),
+    'base_url' => env('API_DOCS_STATIC_BASE_URL', '/api-docs-static'),
+    'themes' => ['swagger', 'redoc', 'rapidoc', 'custom'],
+    'include_assets' => true,
+    'minify_html' => false,
+    'generate_sitemap' => true,
 ],
 \`\`\`
 
@@ -381,7 +441,12 @@ API_DOCS_DESCRIPTION="Internal API Documentation"
    php artisan api-docs:generate --validate --minify
    \`\`\`
 
-3. **Configure Caching**:
+3. **Generate Static Files** (optional):
+   \`\`\`bash
+   php artisan api-docs:static --minify
+   \`\`\`
+
+4. **Configure Caching**:
    \`\`\`bash
    php artisan config:cache
    php artisan route:cache
@@ -394,6 +459,7 @@ Add to your deployment script:
 \`\`\`bash
 #!/bin/bash
 php artisan api-docs:generate --validate --force
+php artisan api-docs:static --force
 php artisan api-docs:clean --cache --older-than=7
 \`\`\`
 
@@ -481,6 +547,3 @@ The MIT License (MIT). Please see [License File](LICENSE.md) for more informatio
     <img src="https://img.shields.io/badge/OpenAPI-6BA539?style=for-the-badge&logo=openapi-initiative&logoColor=white" alt="OpenAPI">
   </a>
 </p>
-\`\`\`
-
-现在让我创建一些补充的文档文件：
