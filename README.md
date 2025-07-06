@@ -32,9 +32,9 @@ A comprehensive Laravel package for automatically generating beautiful API docum
 
 You can install the package via Composer:
 
-\`\`\`bash
+```bash
 composer require x-multibyte/laravel-api-docs
-\`\`\`
+```
 
 ### Laravel Auto-Discovery
 
@@ -44,26 +44,26 @@ The package will automatically register its service provider through Laravel's p
 
 If you need to manually register the service provider, add it to your `config/app.php`:
 
-\`\`\`php
+```php
 'providers' => [
     // Other Service Providers
     XMultibyte\ApiDoc\ApiDocsServiceProvider::class,
 ],
-\`\`\`
+```
 
 ## Quick Start
 
 1. **Publish the configuration file:**
 
-\`\`\`bash
+```bash
 php artisan api-docs:publish --config
-\`\`\`
+```
 
 2. **Generate your API documentation:**
 
-\`\`\`bash
+```bash
 php artisan api-docs:generate
-\`\`\`
+```
 
 3. **View your documentation:**
 
@@ -73,26 +73,26 @@ Visit `http://your-app.test/api-docs` in your browser.
 
 The configuration file will be published to `config/api-docs.php`. Here are the key configuration options:
 
-\`\`\`php
+```php
 return [
     // Basic API information
     'title' => 'My API Documentation',
     'version' => '1.0.0',
     'description' => 'Comprehensive API documentation',
-    
+
     // Route configuration
     'route_prefix' => 'api-docs',
     'middleware' => ['web'],
-    
+
     // Default theme
     'default_theme' => 'swagger',
-    
+
     // Route scanning
     'scan_routes' => [
         'prefix' => 'api',
         'exclude' => ['telescope', 'horizon']
     ],
-    
+
     // OpenAPI configuration
     'openapi' => [
         'version' => '3.0.3',
@@ -104,7 +104,7 @@ return [
         ]
     ]
 ];
-\`\`\`
+```
 
 ## Available Commands
 
@@ -112,88 +112,120 @@ return [
 
 Generate API documentation from your Laravel routes:
 
-\`\`\`bash
-# Basic generation
+```bash
+Basic generation
 php artisan api-docs:generate
+```
 
+```bash
 # Generate with specific format
 php artisan api-docs:generate --format=yaml
+```
 
+```bash
 # Generate both JSON and YAML
 php artisan api-docs:generate --format=both
+```
 
+```bash
 # Generate with validation
 php artisan api-docs:generate --validate
+```
 
+```bash
 # Generate specific routes only
 php artisan api-docs:generate --routes="api/users/*,api/posts/*"
+```
 
+```bash
 # Exclude specific routes
 php artisan api-docs:generate --exclude="api/admin/*"
-\`\`\`
+```
 
 ### Import Documentation
 
 Import existing OpenAPI specifications:
 
-\`\`\`bash
+```bash
 # Import from JSON file
 php artisan api-docs:import openapi.json
+```
 
+```bash
 # Import with validation and backup
 php artisan api-docs:import openapi.yaml --validate --backup
+```
 
+```bash
 # Merge with existing specification
 php artisan api-docs:import openapi.json --merge
-\`\`\`
+```
 
 ### Generate Static Files
 
 Generate static HTML documentation files:
 
-\`\`\`bash
+```bash
 # Generate static files for all themes
 php artisan api-docs:static
+```
 
+```bash
 # Generate specific themes
 php artisan api-docs:static --themes=swagger,redoc
+```
 
+```bash
 # Generate with custom output path
 php artisan api-docs:static --output=/path/to/output
+```
 
+
+```bash
 # Generate minified HTML
 php artisan api-docs:static --minify
+```
 
+```bash
 # Generate with custom base URL
 php artisan api-docs:static --base-url=https://docs.example.com
-\`\`\`
+```
 
 ### Clean Up Files
 
 Clean up generated documentation files:
 
-\`\`\`bash
+```bash
 # Clean all files (dry run)
 php artisan api-docs:clean --all --dry-run
+```
 
+```bash
 # Clean backup files older than 7 days
 php artisan api-docs:clean --backups --older-than=7
+```
 
+
+```bash
 # Clean cache files
 php artisan api-docs:clean --cache
+```
 
+
+```bash
 # Clean generated files
 php artisan api-docs:clean --generated
-\`\`\`
+```
 
 ### Check Status
 
 View documentation status and statistics:
 
-\`\`\`bash
+```bash
 # Basic status
 php artisan api-docs:status
-
+```
+```bash
 # Detailed status with route analysis
 php artisan api-docs:status --detailed
 
@@ -202,13 +234,13 @@ php artisan api-docs:status --routes
 
 # Show file information only
 php artisan api-docs:status --files
-\`\`\`
+```
 
 ### Publish Assets
 
 Publish package files for customization:
 
-\`\`\`bash
+```bash
 # Publish all files
 php artisan api-docs:publish --all
 
@@ -220,15 +252,15 @@ php artisan api-docs:publish --views
 
 # Publish assets only
 php artisan api-docs:publish --assets
-\`\`\`
+```
 
 ### Get Help
 
 Display help information:
 
-\`\`\`bash
+```bash
 php artisan api-docs:help
-\`\`\`
+```
 
 ## Themes
 
@@ -272,7 +304,7 @@ Create your own custom theme by extending the base theme system.
 
 You can customize how routes are detected and processed:
 
-\`\`\`php
+```php
 // In your configuration
 'scan_routes' => [
     'prefix' => 'api',
@@ -288,13 +320,13 @@ You can customize how routes are detected and processed:
         'auth:sanctum'
     ]
 ]
-\`\`\`
+```
 
 ### Security Configuration
 
 Protect your documentation with authentication:
 
-\`\`\`php
+```php
 'security' => [
     'enabled' => true,
     'middleware' => ['auth'],
@@ -305,26 +337,26 @@ Protect your documentation with authentication:
         'password' => env('API_DOCS_PASSWORD')
     ]
 ]
-\`\`\`
+```
 
 ### Caching
 
 Enable caching for better performance:
 
-\`\`\`php
+```php
 'cache' => [
     'enabled' => true,
     'ttl' => 3600, // 1 hour
     'key_prefix' => 'api_docs',
     'store' => 'redis'
 ]
-\`\`\`
+```
 
 ### Static File Generation
 
 Generate static files for deployment:
 
-\`\`\`php
+```php
 'static' => [
     'output_path' => storage_path('api-docs/static'),
     'base_url' => 'https://docs.example.com',
@@ -333,49 +365,57 @@ Generate static files for deployment:
     'include_assets' => true,
     'generate_sitemap' => true
 ]
-\`\`\`
+```
 
 ## Testing
 
 The package includes a comprehensive test suite:
 
-\`\`\`bash
+```bash
 # Run all tests
 composer test
+```
 
+```bash
 # Run tests with coverage
 composer test-coverage
+```
 
+```bash
 # Run code style checks
 composer cs-check
+```
 
+```bash
 # Fix code style issues
 composer cs-fix
+```
 
+```bash
 # Run all quality checks
 composer test-all
-\`\`\`
+```
 
 ### Using Test Factories
 
 The package includes factory classes for testing:
 
-\`\`\`php
+```php
 use XMultibyte\ApiDoc\Tests\Concerns\UsesFactories;
 
 class MyTest extends TestCase
 {
     use UsesFactories;
-    
+
     public function test_something()
     {
         $spec = $this->createOpenApiSpec();
         $route = $this->createRoute('GET', 'api/users');
-        
+
         // Your test logic here
     }
 }
-\`\`\`
+```
 
 ## Changelog
 
