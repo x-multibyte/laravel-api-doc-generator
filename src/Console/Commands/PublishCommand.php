@@ -1,6 +1,6 @@
 <?php
 
-namespace LaravelApiDocs\Console\Commands;
+namespace XMultibyte\ApiDoc\Console\Commands;
 
 use Illuminate\Support\Facades\Artisan;
 
@@ -36,7 +36,7 @@ class PublishCommand extends BaseCommand
         if ($publishConfig || $publishAll) {
             $this->displayInfo('Publishing configuration file...');
             $result = Artisan::call('vendor:publish', [
-                '--provider' => 'LaravelApiDocs\ApiDocsServiceProvider',
+                '--provider' => 'XMultibyte\ApiDoc\ApiDocsServiceProvider',
                 '--tag' => 'config',
                 '--force' => $force
             ]);
@@ -53,7 +53,7 @@ class PublishCommand extends BaseCommand
         if ($publishViews || $publishAll) {
             $this->displayInfo('Publishing view files...');
             $result = Artisan::call('vendor:publish', [
-                '--provider' => 'LaravelApiDocs\ApiDocsServiceProvider',
+                '--provider' => 'XMultibyte\ApiDoc\ApiDocsServiceProvider',
                 '--tag' => 'views',
                 '--force' => $force
             ]);
@@ -70,7 +70,7 @@ class PublishCommand extends BaseCommand
         if ($publishAssets || $publishAll) {
             $this->displayInfo('Publishing asset files...');
             $result = Artisan::call('vendor:publish', [
-                '--provider' => 'LaravelApiDocs\ApiDocsServiceProvider',
+                '--provider' => 'XMultibyte\ApiDoc\ApiDocsServiceProvider',
                 '--tag' => 'assets',
                 '--force' => $force
             ]);

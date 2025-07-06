@@ -1,50 +1,34 @@
 # Laravel API Documentation Generator
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/x-multibyte/laravel-api-docs.svg?style=flat-square)](https://packagist.org/packages/x-multibyte/laravel-api-docs)
+[![GitHub Tests Action Status](https://img.shields.io/github/actions/workflow/status/x-multibyte/laravel-api-docs/run-tests.yml?branch=main&label=tests&style=flat-square)](https://github.com/x-multibyte/laravel-api-docs/actions?query=workflow%3Arun-tests+branch%3Amain)
+[![GitHub Code Style Action Status](https://img.shields.io/github/actions/workflow/status/x-multibyte/laravel-api-docs/fix-php-code-style-issues.yml?branch=main&label=code%20style&style=flat-square)](https://github.com/x-multibyte/laravel-api-docs/actions?query=workflow%3A"Fix+PHP+code+style+issues"+branch%3Amain)
 [![Total Downloads](https://img.shields.io/packagist/dt/x-multibyte/laravel-api-docs.svg?style=flat-square)](https://packagist.org/packages/x-multibyte/laravel-api-docs)
-[![License](https://img.shields.io/packagist/l/x-multibyte/laravel-api-docs.svg?style=flat-square)](https://packagist.org/packages/x-multibyte/laravel-api-docs)
 
-A powerful Laravel package that automatically generates beautiful API documentation from your Laravel routes with support for multiple UI themes and OpenAPI 3+ specifications.
+A comprehensive Laravel package for automatically generating beautiful API documentation from your Laravel routes. Supports multiple UI themes including Swagger UI, ReDoc, and RapiDoc with OpenAPI 3+ specification.
 
-## ✨ Features
+## Features
 
-- 🎨 **Multiple UI Themes**: Swagger UI, ReDoc, RapiDoc, and Custom themes
-- 📋 **OpenAPI 3+ Support**: Full compliance with OpenAPI Specification 3.0.3
-- 🔄 **Import/Export**: Support for JSON and YAML formats
-- 🛣️ **Smart Route Scanning**: Automatically discovers and analyzes API routes
-- 🎯 **Flexible Configuration**: Highly customizable with extensive options
-- 🧹 **Management Tools**: Complete CLI toolkit for documentation management
-- 🔍 **Validation**: Built-in OpenAPI specification validation
-- 💾 **Backup System**: Automatic backup and restore functionality
-- 📄 **Static Generation**: Generate standalone HTML documentation files
-- 🚀 **Easy Integration**: Simple installation and setup process
+- 🚀 **Automatic Documentation Generation** - Scans your Laravel routes and generates OpenAPI 3+ specifications
+- 🎨 **Multiple UI Themes** - Choose from Swagger UI, ReDoc, RapiDoc, or create custom themes
+- 📱 **Responsive Design** - Works perfectly on desktop, tablet, and mobile devices
+- 🔧 **Highly Configurable** - Extensive configuration options for customization
+- 📤 **Export Support** - Export documentation as JSON or YAML files
+- 📥 **Import Support** - Import existing OpenAPI specifications
+- 🗂️ **Static Generation** - Generate static HTML files for hosting anywhere
+- 🧹 **Cleanup Tools** - Built-in commands for managing generated files
+- 🔍 **Route Analysis** - Detailed analysis and statistics of your API routes
+- 🛡️ **Security Support** - Handles authentication middleware detection
+- ⚡ **Performance Optimized** - Caching support for improved performance
+- 🧪 **Comprehensive Testing** - Full test suite with factory patterns
 
-## 📸 Screenshots
+## Requirements
 
-### Swagger UI Theme
-Experience the classic API documentation interface with interactive testing capabilities.
+- PHP 8.2+
+- Laravel 11.0+ or 12.0+
+- Symfony YAML component
 
-![Swagger UI Theme](https://via.placeholder.com/800x400/1f2937/ffffff?text=Swagger+UI+Theme)
-
-### ReDoc Theme  
-Modern, responsive documentation layout with excellent readability.
-
-![ReDoc Theme](https://via.placeholder.com/800x400/2563eb/ffffff?text=ReDoc+Theme)
-
-### RapiDoc Theme
-Fast, lightweight documentation viewer with customizable styling.
-
-![RapiDoc Theme](https://via.placeholder.com/800x400/059669/ffffff?text=RapiDoc+Theme)
-
-### Custom Theme
-Fully customizable theme that you can modify to match your brand.
-
-![Custom Theme](https://via.placeholder.com/800x400/7c3aed/ffffff?text=Custom+Theme)
-
-> **Note**: Replace these placeholder images with actual screenshots of your themes in action. 
-> Recommended image size: 800x400px or higher resolution for better display.
-
-## 🚀 Installation
+## Installation
 
 You can install the package via Composer:
 
@@ -54,507 +38,379 @@ composer require x-multibyte/laravel-api-docs
 
 ### Laravel Auto-Discovery
 
-The package will automatically register itself via Laravel's package auto-discovery feature.
+The package will automatically register its service provider through Laravel's package auto-discovery feature.
 
-### Manual Registration (Laravel < 5.5)
+### Manual Registration (Optional)
 
-If you're using Laravel < 5.5, add the service provider to your `config/app.php`:
+If you need to manually register the service provider, add it to your `config/app.php`:
 
 \`\`\`php
 'providers' => [
-    // ...
+    // Other Service Providers
     XMultibyte\ApiDoc\ApiDocsServiceProvider::class,
 ],
 \`\`\`
 
-## ⚙️ Configuration
+## Quick Start
 
-Publish the configuration file:
+1. **Publish the configuration file:**
 
 \`\`\`bash
 php artisan api-docs:publish --config
 \`\`\`
 
-This will create a `config/api-docs.php` file where you can customize all settings:
+2. **Generate your API documentation:**
+
+\`\`\`bash
+php artisan api-docs:generate
+\`\`\`
+
+3. **View your documentation:**
+
+Visit `http://your-app.test/api-docs` in your browser.
+
+## Configuration
+
+The configuration file will be published to `config/api-docs.php`. Here are the key configuration options:
 
 \`\`\`php
-<?php
-
 return [
+    // Basic API information
     'title' => 'My API Documentation',
-    'description' => 'Comprehensive API documentation for my application',
     'version' => '1.0.0',
+    'description' => 'Comprehensive API documentation',
     
+    // Route configuration
     'route_prefix' => 'api-docs',
     'middleware' => ['web'],
     
+    // Default theme
     'default_theme' => 'swagger',
-    'available_themes' => [
-        'swagger' => 'Swagger UI',
-        'redoc' => 'ReDoc',
-        'rapidoc' => 'RapiDoc',
-        'custom' => 'Custom Theme',
+    
+    // Route scanning
+    'scan_routes' => [
+        'prefix' => 'api',
+        'exclude' => ['telescope', 'horizon']
     ],
     
-    // ... more configuration options
+    // OpenAPI configuration
+    'openapi' => [
+        'version' => '3.0.3',
+        'servers' => [
+            [
+                'url' => env('APP_URL'),
+                'description' => 'Development server'
+            ]
+        ]
+    ]
 ];
 \`\`\`
 
-## 🎯 Quick Start
+## Available Commands
 
-### 1. Publish Assets
+### Generate Documentation
 
-\`\`\`bash
-php artisan api-docs:publish --all
-\`\`\`
-
-### 2. Generate Documentation
-
-\`\`\`bash
-php artisan api-docs:generate --validate
-\`\`\`
-
-### 3. View Documentation
-
-Visit `http://your-app.com/api-docs` in your browser to see your API documentation.
-
-## 📚 Usage
-
-### Web Interface
-
-Once installed, you can access the documentation interface at `/api-docs` (or your configured route prefix). The interface provides:
-
-- **Theme Switching**: Toggle between different UI themes
-- **Export Options**: Download documentation in JSON or YAML format
-- **Import Functionality**: Upload and import OpenAPI specifications
-- **Interactive Testing**: Test API endpoints directly from the documentation
-
-### Command Line Interface
-
-The package includes a comprehensive CLI toolkit:
-
-#### Generate Documentation
+Generate API documentation from your Laravel routes:
 
 \`\`\`bash
 # Basic generation
 php artisan api-docs:generate
 
+# Generate with specific format
+php artisan api-docs:generate --format=yaml
+
+# Generate both JSON and YAML
+php artisan api-docs:generate --format=both
+
 # Generate with validation
 php artisan api-docs:generate --validate
 
-# Generate both JSON and YAML formats
-php artisan api-docs:generate --format=both
-
-# Include specific routes only
+# Generate specific routes only
 php artisan api-docs:generate --routes="api/users/*,api/posts/*"
 
-# Exclude certain routes
+# Exclude specific routes
 php artisan api-docs:generate --exclude="api/admin/*"
-
-# Minify JSON output
-php artisan api-docs:generate --minify --force
 \`\`\`
 
-#### Generate Static Documentation
+### Import Documentation
+
+Import existing OpenAPI specifications:
 
 \`\`\`bash
-# Generate static HTML files
+# Import from JSON file
+php artisan api-docs:import openapi.json
+
+# Import with validation and backup
+php artisan api-docs:import openapi.yaml --validate --backup
+
+# Merge with existing specification
+php artisan api-docs:import openapi.json --merge
+\`\`\`
+
+### Generate Static Files
+
+Generate static HTML documentation files:
+
+\`\`\`bash
+# Generate static files for all themes
 php artisan api-docs:static
 
 # Generate specific themes
 php artisan api-docs:static --themes=swagger,redoc
 
-# Specify output directory
-php artisan api-docs:static --output=/var/www/docs
+# Generate with custom output path
+php artisan api-docs:static --output=/path/to/output
 
-# Minify HTML and skip assets
-php artisan api-docs:static --minify --no-assets
+# Generate minified HTML
+php artisan api-docs:static --minify
+
+# Generate with custom base URL
+php artisan api-docs:static --base-url=https://docs.example.com
 \`\`\`
 
-#### Import Documentation
+### Clean Up Files
+
+Clean up generated documentation files:
 
 \`\`\`bash
-# Import from file
-php artisan api-docs:import openapi.json
-
-# Import with validation and backup
-php artisan api-docs:import spec.yaml --validate --backup
-
-# Merge with existing specification
-php artisan api-docs:import external.json --merge
-\`\`\`
-
-#### Status and Monitoring
-
-\`\`\`bash
-# Check documentation status
-php artisan api-docs:status
-
-# Detailed analysis
-php artisan api-docs:status --detailed
-
-# Route analysis
-php artisan api-docs:status --routes --files
-\`\`\`
-
-#### Cleanup and Maintenance
-
-\`\`\`bash
-# Preview cleanup (dry run)
+# Clean all files (dry run)
 php artisan api-docs:clean --all --dry-run
 
-# Clean old backup files
-php artisan api-docs:clean --backups --older-than=30
+# Clean backup files older than 7 days
+php artisan api-docs:clean --backups --older-than=7
 
-# Clean cache and generated files
-php artisan api-docs:clean --cache --generated
+# Clean cache files
+php artisan api-docs:clean --cache
+
+# Clean generated files
+php artisan api-docs:clean --generated
 \`\`\`
 
-#### Help and Documentation
+### Check Status
+
+View documentation status and statistics:
 
 \`\`\`bash
-# Show all available commands
+# Basic status
+php artisan api-docs:status
+
+# Detailed status with route analysis
+php artisan api-docs:status --detailed
+
+# Show route analysis only
+php artisan api-docs:status --routes
+
+# Show file information only
+php artisan api-docs:status --files
+\`\`\`
+
+### Publish Assets
+
+Publish package files for customization:
+
+\`\`\`bash
+# Publish all files
+php artisan api-docs:publish --all
+
+# Publish configuration only
+php artisan api-docs:publish --config
+
+# Publish views only
+php artisan api-docs:publish --views
+
+# Publish assets only
+php artisan api-docs:publish --assets
+\`\`\`
+
+### Get Help
+
+Display help information:
+
+\`\`\`bash
 php artisan api-docs:help
 \`\`\`
 
-## 🎨 Themes
+## Themes
 
 ### Swagger UI
-The classic API documentation interface with interactive testing capabilities.
+
+The default theme using Swagger UI for interactive API documentation.
+
+**Features:**
+- Interactive API testing
+- Request/response examples
+- Schema visualization
+- Authentication support
 
 ### ReDoc
-A modern, responsive documentation layout with excellent readability.
+
+Beautiful, responsive API documentation with ReDoc.
+
+**Features:**
+- Clean, modern design
+- Three-panel layout
+- Advanced search functionality
+- Customizable themes
 
 ### RapiDoc
-A fast, lightweight documentation viewer with customizable styling.
+
+Modern API documentation with RapiDoc.
+
+**Features:**
+- Multiple layout options
+- Built-in API testing
+- Customizable styling
+- Advanced filtering
 
 ### Custom Theme
-A fully customizable theme that you can modify to match your brand.
 
-## 📄 Static Documentation Generation
+Create your own custom theme by extending the base theme system.
 
-Generate standalone HTML documentation files that can be deployed to any static hosting service:
+## Advanced Usage
 
-\`\`\`bash
-# Generate static files
-php artisan api-docs:static
+### Custom Route Detection
 
-# Output structure:
-# output-directory/
-# ├── index.html              # Main page
-# ├── swagger.html            # Swagger UI theme
-# ├── redoc.html              # ReDoc theme
-# ├── rapidoc.html            # RapiDoc theme
-# ├── custom.html             # Custom theme
-# ├── openapi.json            # OpenAPI spec (JSON)
-# ├── openapi.yaml            # OpenAPI spec (YAML)
-# ├── sitemap.xml             # Sitemap
-# └── assets/                 # CSS, JS, images
-\`\`\`
-
-### Deployment Options
-
-- **GitHub Pages**: Upload to `gh-pages` branch
-- **Netlify**: Drag and drop the output folder
-- **Vercel**: Deploy with `vercel --prod`
-- **AWS S3**: Sync to S3 bucket with CloudFront
-- **Any CDN**: Upload files to your preferred CDN
-
-## 🔧 Advanced Configuration
-
-### Route Scanning
-
-Configure which routes to include in your documentation:
+You can customize how routes are detected and processed:
 
 \`\`\`php
+// In your configuration
 'scan_routes' => [
     'prefix' => 'api',
     'exclude' => [
         'telescope',
         'horizon',
-        'nova-api',
+        'debugbar',
+        '_ignition'
     ],
-],
+    'include_middleware' => [
+        'api',
+        'auth:api',
+        'auth:sanctum'
+    ]
+]
 \`\`\`
 
-### OpenAPI Configuration
+### Security Configuration
 
-Customize your OpenAPI specification:
-
-\`\`\`php
-'openapi' => [
-    'version' => '3.0.3',
-    'servers' => [
-        [
-            'url' => env('APP_URL', 'http://localhost'),
-            'description' => 'Development Server',
-        ],
-    ],
-    'security' => [
-        'bearerAuth' => [
-            'type' => 'http',
-            'scheme' => 'bearer',
-            'bearerFormat' => 'JWT',
-        ],
-    ],
-],
-\`\`\`
-
-### Static Generation Configuration
+Protect your documentation with authentication:
 
 \`\`\`php
-'static' => [
+'security' => [
     'enabled' => true,
-    'output_path' => public_path('api-docs-static'),
-    'base_url' => env('API_DOCS_STATIC_BASE_URL', '/api-docs-static'),
-    'themes' => ['swagger', 'redoc', 'rapidoc', 'custom'],
-    'include_assets' => true,
-    'minify_html' => false,
-    'generate_sitemap' => true,
-],
+    'middleware' => ['auth'],
+    'allowed_ips' => ['127.0.0.1'],
+    'basic_auth' => [
+        'enabled' => true,
+        'username' => env('API_DOCS_USERNAME'),
+        'password' => env('API_DOCS_PASSWORD')
+    ]
+]
 \`\`\`
-
-### Middleware Configuration
-
-Protect your documentation with middleware:
-
-\`\`\`php
-'middleware' => ['web', 'auth', 'admin'],
-\`\`\`
-
-## 🎯 Customization
-
-### Custom Views
-
-Publish and customize the view templates:
-
-\`\`\`bash
-php artisan api-docs:publish --views
-\`\`\`
-
-Views will be published to `resources/views/vendor/api-docs/` where you can customize:
-
-- `index.blade.php` - Main documentation page
-- `themes/swagger.blade.php` - Swagger UI theme
-- `themes/redoc.blade.php` - ReDoc theme
-- `themes/rapidoc.blade.php` - RapiDoc theme
-- `themes/custom.blade.php` - Custom theme
-
-### Custom Styling
-
-Publish assets and customize the styling:
-
-\`\`\`bash
-php artisan api-docs:publish --assets
-\`\`\`
-
-Assets will be published to `public/vendor/api-docs/` where you can modify CSS and JavaScript files.
-
-## 📖 API Reference
-
-### ApiDocsGenerator Class
-
-The main generator class provides methods for:
-
-\`\`\`php
-// Generate OpenAPI specification
-$spec = app('api-docs')->generate();
-
-// Export to JSON
-$json = app('api-docs')->exportToJson();
-
-// Export to YAML
-$yaml = app('api-docs')->exportToYaml();
-
-// Import from JSON
-app('api-docs')->importFromJson($jsonString);
-
-// Import from YAML
-app('api-docs')->importFromYaml($yamlString);
-\`\`\`
-
-### Route Helpers
-
-Access documentation routes programmatically:
-
-\`\`\`php
-// Get documentation URL
-$url = route('api-docs.index');
-
-// Get specification URLs
-$jsonUrl = route('api-docs.spec.json');
-$yamlUrl = route('api-docs.spec.yaml');
-
-// Get theme URLs
-$swaggerUrl = route('api-docs.swagger');
-$redocUrl = route('api-docs.redoc');
-$rapidocUrl = route('api-docs.rapidoc');
-\`\`\`
-
-## 🧪 Testing
-
-Run the test suite:
-
-\`\`\`bash
-composer test
-\`\`\`
-
-Run tests with coverage:
-
-\`\`\`bash
-composer test-coverage
-\`\`\`
-
-## 📊 Performance
 
 ### Caching
 
-The package automatically caches generated documentation to improve performance. Cache files are stored in `storage/api-docs/cache/`.
-
-### Optimization Tips
-
-1. **Use Route Caching**: Run `php artisan route:cache` in production
-2. **Configure Exclusions**: Exclude unnecessary routes to speed up generation
-3. **Enable Minification**: Use `--minify` flag for smaller JSON files
-4. **Regular Cleanup**: Use `api-docs:clean` to remove old files
-
-## 🔒 Security
-
-### Access Control
-
-Protect your documentation with middleware:
+Enable caching for better performance:
 
 \`\`\`php
-'middleware' => ['web', 'auth:admin'],
+'cache' => [
+    'enabled' => true,
+    'ttl' => 3600, // 1 hour
+    'key_prefix' => 'api_docs',
+    'store' => 'redis'
+]
 \`\`\`
 
-### Environment Configuration
+### Static File Generation
 
-Use environment variables for sensitive configuration:
+Generate static files for deployment:
 
-\`\`\`env
-API_DOCS_TITLE="My API Documentation"
-API_DOCS_VERSION="1.0.0"
-API_DOCS_DESCRIPTION="Internal API Documentation"
+\`\`\`php
+'static' => [
+    'output_path' => storage_path('api-docs/static'),
+    'base_url' => 'https://docs.example.com',
+    'themes' => ['swagger', 'redoc'],
+    'minify_html' => true,
+    'include_assets' => true,
+    'generate_sitemap' => true
+]
 \`\`\`
 
-## 🚀 Deployment
+## Testing
 
-### Production Setup
-
-1. **Publish Configuration**:
-   \`\`\`bash
-   php artisan api-docs:publish --config
-   \`\`\`
-
-2. **Generate Documentation**:
-   \`\`\`bash
-   php artisan api-docs:generate --validate --minify
-   \`\`\`
-
-3. **Generate Static Files** (optional):
-   \`\`\`bash
-   php artisan api-docs:static --minify
-   \`\`\`
-
-4. **Configure Caching**:
-   \`\`\`bash
-   php artisan config:cache
-   php artisan route:cache
-   \`\`\`
-
-### CI/CD Integration
-
-Add to your deployment script:
+The package includes a comprehensive test suite:
 
 \`\`\`bash
-#!/bin/bash
-php artisan api-docs:generate --validate --force
-php artisan api-docs:static --force
-php artisan api-docs:clean --cache --older-than=7
+# Run all tests
+composer test
+
+# Run tests with coverage
+composer test-coverage
+
+# Run code style checks
+composer cs-check
+
+# Fix code style issues
+composer cs-fix
+
+# Run all quality checks
+composer test-all
 \`\`\`
 
-## 🤝 Contributing
+### Using Test Factories
 
-We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for details.
+The package includes factory classes for testing:
 
-### Development Setup
+\`\`\`php
+use XMultibyte\ApiDoc\Tests\Concerns\UsesFactories;
 
-1. **Clone the repository**:
-   \`\`\`bash
-   git clone https://github.com/x-multibyte/laravel-api-docs.git
-   cd laravel-api-docs
-   \`\`\`
+class MyTest extends TestCase
+{
+    use UsesFactories;
+    
+    public function test_something()
+    {
+        $spec = $this->createOpenApiSpec();
+        $route = $this->createRoute('GET', 'api/users');
+        
+        // Your test logic here
+    }
+}
+\`\`\`
 
-2. **Install dependencies**:
-   \`\`\`bash
-   composer install
-   \`\`\`
+## Changelog
 
-3. **Run tests**:
-   \`\`\`bash
-   composer test
-   \`\`\`
+Please see [CHANGELOG](CHANGELOG.md) for more information on what has changed recently.
 
-### Coding Standards
+## Contributing
 
-- Follow PSR-12 coding standards
-- Write comprehensive tests for new features
-- Update documentation for any changes
-- Use meaningful commit messages
+Please see [CONTRIBUTING](CONTRIBUTING.md) for details on how to contribute to this project.
 
-## 📝 Changelog
+## Security Vulnerabilities
 
-Please see [CHANGELOG.md](CHANGELOG.md) for more information on what has changed recently.
+Please review [our security policy](../../security/policy) on how to report security vulnerabilities.
 
-## 🔐 Security
+## Credits
 
-If you discover any security-related issues, please email security@x-multibyte.com instead of using the issue tracker.
+- [X-Multibyte](https://github.com/x-multibyte)
+- [All Contributors](../../contributors)
 
-## 📄 License
+## License
 
 The MIT License (MIT). Please see [License File](LICENSE.md) for more information.
 
-## 🙏 Credits
+## Support
 
-- **Author**: [X-Multibyte](https://github.com/x-multibyte)
-- **Contributors**: [All Contributors](../../contributors)
+If you discover any security related issues, please email security@x-multibyte.com instead of using the issue tracker.
 
-### Built With
+For general support and questions, please use the [GitHub Discussions](https://github.com/x-multibyte/laravel-api-docs/discussions) or open an issue on [GitHub](https://github.com/x-multibyte/laravel-api-docs/issues).
 
-- [Laravel](https://laravel.com) - The PHP Framework
-- [Swagger UI](https://swagger.io/tools/swagger-ui/) - API Documentation UI
-- [ReDoc](https://github.com/Redocly/redoc) - OpenAPI Documentation
-- [RapiDoc](https://mrin9.github.io/RapiDoc/) - API Documentation Tool
-- [Symfony YAML](https://symfony.com/doc/current/components/yaml.html) - YAML Parser
+## Roadmap
 
-## 🌟 Support
-
-- ⭐ **Star this repository** if you find it helpful
-- 🐛 **Report bugs** via [GitHub Issues](https://github.com/x-multibyte/laravel-api-docs/issues)
-- 💡 **Request features** via [GitHub Discussions](https://github.com/x-multibyte/laravel-api-docs/discussions)
-- 📖 **Read the documentation** at [docs.x-multibyte.com](https://docs.x-multibyte.com)
-
-## 📞 Community
-
-- **Discord**: [Join our Discord server](https://discord.gg/x-multibyte)
-- **Twitter**: [@XMultibyte](https://twitter.com/XMultibyte)
-- **Blog**: [blog.x-multibyte.com](https://blog.x-multibyte.com)
-
----
-
-<p align="center">
-  <strong>Made with ❤️ by X-Multibyte</strong>
-</p>
-
-<p align="center">
-  <a href="https://laravel.com">
-    <img src="https://img.shields.io/badge/Laravel-FF2D20?style=for-the-badge&logo=laravel&logoColor=white" alt="Laravel">
-  </a>
-  <a href="https://php.net">
-    <img src="https://img.shields.io/badge/PHP-777BB4?style=for-the-badge&logo=php&logoColor=white" alt="PHP">
-  </a>
-  <a href="https://swagger.io">
-    <img src="https://img.shields.io/badge/OpenAPI-6BA539?style=for-the-badge&logo=openapi-initiative&logoColor=white" alt="OpenAPI">
-  </a>
-</p>
+- [ ] GraphQL support
+- [ ] API versioning support
+- [ ] Advanced authentication schemes
+- [ ] Custom annotation support
+- [ ] Integration with popular API testing tools
+- [ ] Multi-language documentation support
+- [ ] Advanced caching strategies
+- [ ] Real-time documentation updates

@@ -1,6 +1,6 @@
 <?php
 
-namespace LaravelApiDocs\Console\Commands;
+namespace XMultibyte\ApiDoc\Console\Commands;
 
 use Illuminate\Support\Facades\File;
 use Symfony\Component\Yaml\Yaml;

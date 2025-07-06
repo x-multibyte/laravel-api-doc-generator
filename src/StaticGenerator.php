@@ -4,7 +4,7 @@ namespace XMultibyte\ApiDoc;
 
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\View;
-use Illuminate\Support\Str;
+use Symfony\Component\Yaml\Yaml;
 
 class StaticGenerator
 {
@@ -13,25 +13,35 @@ class StaticGenerator
 
     public function configure(array $config): void
     {
-        $this->config = $config;
-        $this->spec = $config['spec'] ?? [];
+        $this->config = array_merge([
+            'output_path' => storage_path('api-docs/static'),
+            'base_url' => '',
+            'minify' => false,
+            'include_assets' => true,
+            'spec' => []
+        ], $config);
+
+        $this->spec = $this->config['spec'];
     }
 
     public function generateSpecificationFiles(): array
     {
-        $files = [];
         $outputPath = $this->config['output_path'];
+        $files = [];
 
         // Generate JSON specification
-        $jsonContent = json_encode($this->spec, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
         $jsonFile = $outputPath . '/openapi.json';
-        File::put($jsonFile, $jsonContent);
+        $json = $this->config['minify'] 
+            ? json_encode($this->spec, JSON_UNESCAPED_SLASHES)
+            : json_encode($this->spec, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+        
+        File::put($jsonFile, $json);
         $files[] = $jsonFile;
 
         // Generate YAML specification
-        $yamlContent = \Symfony\Component\Yaml\Yaml::dump($this->spec, 4, 2);
         $yamlFile = $outputPath . '/openapi.yaml';
-        File::put($yamlFile, $yamlContent);
+        $yaml = Yaml::dump($this->spec, 4, 2, Yaml::DUMP_OBJECT_AS_MAP);
+        File::put($yamlFile, $yaml);
         $files[] = $yamlFile;
 
         return $files;
@@ -39,36 +49,25 @@ class StaticGenerator
 
     public function generateTheme(string $theme): array
     {
-        $files = [];
         $outputPath = $this->config['output_path'];
-        $baseUrl = $this->config['base_url'];
+        $files = [];
 
-        // Create theme directory
-        $themeDir = $outputPath . '/' . $theme;
-        if (!File::exists($themeDir)) {
-            File::makeDirectory($themeDir, 0755, true);
-        }
+        $viewData = [
+            'spec' => $this->spec,
+            'baseUrl' => $this->config['base_url'],
+            'theme' => $theme
+        ];
 
-        // Generate theme HTML
-        $html = $this->renderThemeView($theme, $baseUrl);
+        // Generate standalone theme file
+        $html = View::make("api-docs::static.themes.{$theme}", $viewData)->render();
         
         if ($this->config['minify']) {
             $html = $this->minifyHtml($html);
         }
 
-        $themeFile = $themeDir . '/index.html';
+        $themeFile = $outputPath . "/{$theme}.html";
         File::put($themeFile, $html);
         $files[] = $themeFile;
-
-        // Generate standalone theme page
-        $standaloneHtml = $this->renderStandaloneTheme($theme, $baseUrl);
-        if ($this->config['minify']) {
-            $standaloneHtml = $this->minifyHtml($standaloneHtml);
-        }
-
-        $standaloneFile = $outputPath . '/' . $theme . '.html';
-        File::put($standaloneFile, $standaloneHtml);
-        $files[] = $standaloneFile;
 
         return $files;
     }
@@ -76,9 +75,15 @@ class StaticGenerator
     public function generateIndexPage(array $themes): string
     {
         $outputPath = $this->config['output_path'];
-        $baseUrl = $this->config['base_url'];
+        
+        $viewData = [
+            'spec' => $this->spec,
+            'themes' => $themes,
+            'baseUrl' => $this->config['base_url'],
+            'defaultTheme' => $themes[0] ?? 'swagger'
+        ];
 
-        $html = $this->renderIndexView($themes, $baseUrl);
+        $html = View::make('api-docs::static.index', $viewData)->render();
         
         if ($this->config['minify']) {
             $html = $this->minifyHtml($html);
@@ -92,40 +97,41 @@ class StaticGenerator
 
     public function copyAssets(): array
     {
-        $files = [];
         $outputPath = $this->config['output_path'];
-        $assetsDir = $outputPath . '/assets';
+        $assetsPath = $outputPath . '/assets';
+        $files = [];
 
-        if (!File::exists($assetsDir)) {
-            File::makeDirectory($assetsDir, 0755, true);
+        if (!File::exists($assetsPath)) {
+            File::makeDirectory($assetsPath, 0755, true);
         }
 
         // Copy CSS files
-        $cssDir = $assetsDir . '/css';
-        File::makeDirectory($cssDir, 0755, true);
-        
-        $customCss = $this->generateCustomCss();
-        $cssFile = $cssDir . '/api-docs.css';
-        File::put($cssFile, $customCss);
-        $files[] = $cssFile;
+        $cssFiles = [
+            'swagger-ui.css' => $this->getSwaggerUiCss(),
+            'redoc.css' => $this->getRedocCss(),
+            'rapidoc.css' => $this->getRapidocCss(),
+            'custom.css' => $this->getCustomCss()
+        ];
 
-        // Copy JavaScript files
-        $jsDir = $assetsDir . '/js';
-        File::makeDirectory($jsDir, 0755, true);
-        
-        $customJs = $this->generateCustomJs();
-        $jsFile = $jsDir . '/api-docs.js';
-        File::put($jsFile, $customJs);
-        $files[] = $jsFile;
+        foreach ($cssFiles as $filename => $content) {
+            $file = $assetsPath . '/' . $filename;
+            File::put($file, $content);
+            $files[] = $file;
+        }
 
-        // Copy images/icons
-        $imgDir = $assetsDir . '/img';
-        File::makeDirectory($imgDir, 0755, true);
-        
-        $faviconContent = $this->generateFavicon();
-        $faviconFile = $imgDir . '/favicon.ico';
-        File::put($faviconFile, $faviconContent);
-        $files[] = $faviconFile;
+        // Copy JS files
+        $jsFiles = [
+            'swagger-ui-bundle.js' => $this->getSwaggerUiJs(),
+            'redoc.standalone.js' => $this->getRedocJs(),
+            'rapidoc-min.js' => $this->getRapidocJs(),
+            'custom.js' => $this->getCustomJs()
+        ];
+
+        foreach ($jsFiles as $filename => $content) {
+            $file = $assetsPath . '/' . $filename;
+            File::put($file, $content);
+            $files[] = $file;
+        }
 
         return $files;
     }
@@ -133,66 +139,34 @@ class StaticGenerator
     public function generateSitemap(array $themes): string
     {
         $outputPath = $this->config['output_path'];
-        $baseUrl = $this->config['base_url'];
+        $baseUrl = rtrim($this->config['base_url'], '/');
         
         $urls = [
             $baseUrl . '/index.html'
         ];
-        
+
         foreach ($themes as $theme) {
-            $urls[] = $baseUrl . '/' . $theme . '.html';
-            $urls[] = $baseUrl . '/' . $theme . '/index.html';
+            $urls[] = $baseUrl . "/{$theme}.html";
+        }
+
+        $xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
+        $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
+        
+        foreach ($urls as $url) {
+            $xml .= "  <url>\n";
+            $xml .= "    <loc>{$url}</loc>\n";
+            $xml .= "    <lastmod>" . date('Y-m-d') . "</lastmod>\n";
+            $xml .= "    <changefreq>weekly</changefreq>\n";
+            $xml .= "    <priority>0.8</priority>\n";
+            $xml .= "  </url>\n";
         }
         
-        $urls[] = $baseUrl . '/openapi.json';
-        $urls[] = $baseUrl . '/openapi.yaml';
+        $xml .= '</urlset>';
 
-        $xml = $this->generateSitemapXml($urls);
         $sitemapFile = $outputPath . '/sitemap.xml';
         File::put($sitemapFile, $xml);
 
         return $sitemapFile;
-    }
-
-    protected function renderThemeView(string $theme, string $baseUrl): string
-    {
-        $viewData = [
-            'spec_url' => $baseUrl . '/openapi.json',
-            'base_url' => $baseUrl,
-            'theme' => $theme,
-            'title' => config('api-docs.title'),
-            'description' => config('api-docs.description')
-        ];
-
-        return View::make("api-docs::static.themes.{$theme}", $viewData)->render();
-    }
-
-    protected function renderStandaloneTheme(string $theme, string $baseUrl): string
-    {
-        $viewData = [
-            'spec_url' => $baseUrl . '/openapi.json',
-            'base_url' => $baseUrl,
-            'theme' => $theme,
-            'title' => config('api-docs.title'),
-            'description' => config('api-docs.description'),
-            'standalone' => true
-        ];
-
-        return View::make('api-docs::static.standalone', $viewData)->render();
-    }
-
-    protected function renderIndexView(array $themes, string $baseUrl): string
-    {
-        $viewData = [
-            'themes' => $themes,
-            'available_themes' => config('api-docs.available_themes'),
-            'base_url' => $baseUrl,
-            'title' => config('api-docs.title'),
-            'description' => config('api-docs.description'),
-            'spec' => $this->spec
-        ];
-
-        return View::make('api-docs::static.index', $viewData)->render();
     }
 
     protected function minifyHtml(string $html): string
@@ -209,131 +183,123 @@ class StaticGenerator
         return trim($html);
     }
 
-    protected function generateCustomCss(): string
+    protected function getSwaggerUiCss(): string
     {
-        return '
-/* API Documentation Static Styles */
-.api-docs-static {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-}
+        return <<<CSS
+/* Swagger UI CSS - Minified version would be loaded from CDN in production */
+.swagger-ui { font-family: sans-serif; }
+.swagger-ui .topbar { display: none; }
+CSS;
+    }
 
-.api-docs-header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    padding: 2rem 0;
-    margin-bottom: 2rem;
-}
+    protected function getRedocCss(): string
+    {
+        return <<<CSS
+/* ReDoc CSS - Minified version would be loaded from CDN in production */
+body { margin: 0; padding: 0; }
+CSS;
+    }
 
-.api-docs-nav {
-    background: #f8f9fa;
-    padding: 1rem 0;
-    border-bottom: 1px solid #dee2e6;
-}
+    protected function getRapidocCss(): string
+    {
+        return <<<CSS
+/* RapiDoc CSS - Minified version would be loaded from CDN in production */
+rapi-doc { height: 100vh; }
+CSS;
+    }
 
-.api-docs-nav ul {
-    list-style: none;
-    display: flex;
-    gap: 1rem;
+    protected function getCustomCss(): string
+    {
+        return <<<CSS
+/* Custom CSS for API documentation */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     margin: 0;
     padding: 0;
 }
 
-.api-docs-nav a {
-    text-decoration: none;
-    color: #495057;
-    padding: 0.5rem 1rem;
-    border-radius: 0.25rem;
-    transition: all 0.2s;
-}
-
-.api-docs-nav a:hover,
-.api-docs-nav a.active {
-    background: #007bff;
+.api-docs-header {
+    background: #1f2937;
     color: white;
-}
-
-.api-docs-footer {
-    background: #343a40;
-    color: white;
-    padding: 2rem 0;
-    margin-top: 3rem;
+    padding: 1rem;
     text-align: center;
 }
 
-@media (max-width: 768px) {
-    .api-docs-nav ul {
-        flex-direction: column;
-    }
+.theme-selector {
+    margin: 1rem;
+    text-align: center;
 }
-';
+
+.theme-selector button {
+    margin: 0 0.5rem;
+    padding: 0.5rem 1rem;
+    border: 1px solid #ccc;
+    background: white;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.theme-selector button.active {
+    background: #3b82f6;
+    color: white;
+    border-color: #3b82f6;
+}
+CSS;
     }
 
-    protected function generateCustomJs(): string
+    protected function getSwaggerUiJs(): string
     {
-        return '
-// API Documentation Static JavaScript
-document.addEventListener("DOMContentLoaded", function() {
-    // Theme switching
-    const themeSelector = document.getElementById("theme-selector");
-    if (themeSelector) {
-        themeSelector.addEventListener("change", function() {
-            const theme = this.value;
-            window.location.href = theme + ".html";
-        });
+        return <<<JS
+/* Swagger UI JS - Minified version would be loaded from CDN in production */
+console.log('Swagger UI loaded');
+JS;
     }
 
-    // Copy to clipboard functionality
-    const copyButtons = document.querySelectorAll(".copy-btn");
-    copyButtons.forEach(button => {
-        button.addEventListener("click", function() {
-            const target = document.querySelector(this.dataset.target);
-            if (target) {
-                navigator.clipboard.writeText(target.textContent).then(() => {
-                    this.textContent = "Copied!";
-                    setTimeout(() => {
-                        this.textContent = "Copy";
-                    }, 2000);
-                });
-            }
-        });
-    });
+    protected function getRedocJs(): string
+    {
+        return <<<JS
+/* ReDoc JS - Minified version would be loaded from CDN in production */
+console.log('ReDoc loaded');
+JS;
+    }
 
-    // Smooth scrolling for anchor links
-    const anchorLinks = document.querySelectorAll(\'a[href^="#"]\');
-    anchorLinks.forEach(link => {
-        link.addEventListener("click", function(e) {
-            e.preventDefault();
-            const target = document.querySelector(this.getAttribute("href"));
-            if (target) {
-                target.scrollIntoView({ behavior: "smooth" });
-            }
+    protected function getRapidocJs(): string
+    {
+        return <<<JS
+/* RapiDoc JS - Minified version would be loaded from CDN in production */
+console.log('RapiDoc loaded');
+JS;
+    }
+
+    protected function getCustomJs(): string
+    {
+        return <<<JS
+/* Custom JavaScript for API documentation */
+document.addEventListener('DOMContentLoaded', function() {
+    // Theme switching functionality
+    const themeButtons = document.querySelectorAll('.theme-btn');
+    const themeContainers = document.querySelectorAll('.theme-container');
+    
+    themeButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const theme = this.dataset.theme;
+            
+            // Update active button
+            themeButtons.forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+            
+            // Show selected theme container
+            themeContainers.forEach(container => {
+                container.style.display = container.id === theme + '-container' ? 'block' : 'none';
+            });
         });
     });
+    
+    // Initialize first theme
+    if (themeButtons.length > 0) {
+        themeButtons[0].click();
+    }
 });
-';
-    }
-
-    protected function generateFavicon(): string
-    {
-        // Generate a simple base64 encoded favicon
-        return base64_decode('AAABAAEAEBAAAAEACABoBQAAFgAAACgAAAAQAAAAIAAAAAEACAAAAAAAAAEAAAAAAAAAAAAAAAEAAAAAAAAAAAAAH1siAB9bJgAhXSQAIF4pACJdJQAjXyUAJF8nACdgJgAoYSgAK2MoACxkKQAuZyoAMGkqADBpLAAyaiIAM2wkADNsJgA1bigANm4qADpwJgA6cCoAO3EqAD1zKgBBdioAQ3YsAENcgABBdpMAS3cqAEx4KwBPfSkATn0qAFGJTgBRiU8AVJhqAFKJWABWkGsAVZJvAFeSeABaj14AXaZzAF6jdABdqHYAX6d4AGOrfgBhqnwAaKxrAGatfwB2sGcAhsF6AJDFewCdynoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA');
-    }
-
-    protected function generateSitemapXml(array $urls): string
-    {
-        $xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
-        $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
-        
-        foreach ($urls as $url) {
-            $xml .= '  <url>' . "\n";
-            $xml .= '    <loc>' . htmlspecialchars($url) . '</loc>' . "\n";
-            $xml .= '    <changefreq>weekly</changefreq>' . "\n";
-            $xml .= '    <priority>0.8</priority>' . "\n";
-            $xml .= '  </url>' . "\n";
-        }
-        
-        $xml .= '</urlset>';
-        
-        return $xml;
+JS;
     }
 }
