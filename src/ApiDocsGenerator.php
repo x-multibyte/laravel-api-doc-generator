@@ -2,130 +2,183 @@
 
 namespace XMultibyte\ApiDoc;
 
-use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\File;
+use Illuminate\Foundation\Application;
+use Illuminate\Routing\Route;
+use Illuminate\Routing\Router;
 use Illuminate\Support\Collection;
-use Symfony\Component\Yaml\Yaml;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Str;
 use ReflectionClass;
 use ReflectionMethod;
+use Symfony\Component\Yaml\Yaml;
 
 class ApiDocsGenerator
 {
+    protected Application $app;
+    protected Router $router;
     protected array $config;
     protected array $openApiSpec;
 
-    public function __construct(array $config = [])
+    public function __construct(Application $app)
     {
-        $this->config = array_merge([
-            'title' => 'API Documentation',
-            'version' => '1.0.0',
-            'description' => 'Generated API Documentation',
-            'openapi' => [
-                'version' => '3.0.3',
-                'servers' => []
-            ],
-            'scan_routes' => [
-                'prefix' => 'api',
-                'exclude' => ['telescope', 'horizon', 'debugbar']
-            ]
-        ], $config);
-
-        $this->initializeSpec();
+        $this->app = $app;
+        $this->router = $app['router'];
+        $this->config = config('api-docs', []);
+        $this->initializeOpenApiSpec();
     }
 
-    protected function initializeSpec(): void
+    /**
+     * Initialize the OpenAPI specification structure.
+     */
+    protected function initializeOpenApiSpec(): void
     {
         $this->openApiSpec = [
-            'openapi' => $this->config['openapi']['version'],
+            'openapi' => $this->config['openapi']['version'] ?? '3.0.3',
             'info' => [
-                'title' => $this->config['title'],
-                'version' => $this->config['version'],
-                'description' => $this->config['description']
+                'title' => $this->config['title'] ?? 'API Documentation',
+                'description' => $this->config['description'] ?? '',
+                'version' => $this->config['version'] ?? '1.0.0',
+                'contact' => $this->config['contact'] ?? [],
+                'license' => $this->config['license'] ?? [],
             ],
-            'servers' => $this->config['openapi']['servers'] ?? [],
+            'servers' => $this->config['openapi']['servers'] ?? [
+                [
+                    'url' => config('app.url'),
+                    'description' => 'Development server',
+                ],
+            ],
             'paths' => [],
             'components' => [
                 'schemas' => [],
-                'responses' => [],
-                'parameters' => [],
-                'examples' => [],
-                'requestBodies' => [],
-                'headers' => [],
-                'securitySchemes' => [],
-                'links' => [],
-                'callbacks' => []
+                'securitySchemes' => $this->config['openapi']['security'] ?? [],
             ],
-            'security' => [],
             'tags' => [],
-            'externalDocs' => []
         ];
     }
 
-    public function generate(): array
+    /**
+     * Generate the complete API documentation.
+     */
+    public function generate(array $options = []): array
     {
-        $routes = $this->getApiRoutes();
+        $cacheKey = 'api-docs:spec:' . md5(serialize($options));
         
-        foreach ($routes as $route) {
-            $this->processRoute($route);
+        if ($this->shouldUseCache() && !($options['force'] ?? false)) {
+            $cached = Cache::get($cacheKey);
+            if ($cached) {
+                return $cached;
+            }
         }
 
+        $routes = $this->getApiRoutes($options);
+        $this->processRoutes($routes);
         $this->generateTags();
-        $this->generateSecuritySchemes();
         
+        if ($options['validate'] ?? false) {
+            $this->validateSpecification();
+        }
+
+        if ($this->shouldUseCache()) {
+            Cache::put($cacheKey, $this->openApiSpec, $this->getCacheTtl());
+        }
+
         return $this->openApiSpec;
     }
 
-    protected function getApiRoutes(): Collection
+    /**
+     * Get API routes based on configuration and options.
+     */
+    protected function getApiRoutes(array $options = []): Collection
     {
-        $prefix = $this->config['scan_routes']['prefix'];
-        $excludePatterns = $this->config['scan_routes']['exclude'];
+        $routes = collect($this->router->getRoutes()->getRoutes());
 
-        return collect(Route::getRoutes())->filter(function ($route) use ($prefix, $excludePatterns) {
-            $uri = $route->uri();
-            
-            // Check if route starts with API prefix
-            if (!str_starts_with($uri, $prefix)) {
-                return false;
-            }
+        // Filter by prefix
+        if ($prefix = $this->config['scan_routes']['prefix'] ?? null) {
+            $routes = $routes->filter(function (Route $route) use ($prefix) {
+                return Str::startsWith($route->uri(), $prefix);
+            });
+        }
 
-            // Check exclude patterns
-            foreach ($excludePatterns as $pattern) {
-                if (str_contains($uri, $pattern)) {
-                    return false;
+        // Apply include patterns
+        if (!empty($options['routes'])) {
+            $patterns = explode(',', $options['routes']);
+            $routes = $routes->filter(function (Route $route) use ($patterns) {
+                foreach ($patterns as $pattern) {
+                    if (Str::is(trim($pattern), $route->uri())) {
+                        return true;
+                    }
                 }
-            }
+                return false;
+            });
+        }
 
-            return true;
-        });
+        // Apply exclude patterns
+        $excludePatterns = array_merge(
+            $this->config['scan_routes']['exclude'] ?? [],
+            !empty($options['exclude']) ? explode(',', $options['exclude']) : []
+        );
+
+        if (!empty($excludePatterns)) {
+            $routes = $routes->filter(function (Route $route) use ($excludePatterns) {
+                foreach ($excludePatterns as $pattern) {
+                    if (Str::is($pattern, $route->uri())) {
+                        return false;
+                    }
+                }
+                return true;
+            });
+        }
+
+        return $routes;
     }
 
-    protected function processRoute($route): void
+    /**
+     * Process routes and generate OpenAPI paths.
+     */
+    protected function processRoutes(Collection $routes): void
+    {
+        foreach ($routes as $route) {
+            $this->processRoute($route);
+        }
+    }
+
+    /**
+     * Process a single route.
+     */
+    protected function processRoute(Route $route): void
     {
         $uri = '/' . ltrim($route->uri(), '/');
-        $methods = array_diff($route->methods(), ['HEAD']);
+        $methods = $route->methods();
+
+        // Convert Laravel route parameters to OpenAPI format
+        $uri = preg_replace('/\{([^}]+)\}/', '{$1}', $uri);
 
         if (!isset($this->openApiSpec['paths'][$uri])) {
             $this->openApiSpec['paths'][$uri] = [];
         }
 
         foreach ($methods as $method) {
-            $method = strtolower($method);
-            $this->openApiSpec['paths'][$uri][$method] = $this->generateOperation($route, $method);
+            if (in_array(strtoupper($method), ['HEAD', 'OPTIONS'])) {
+                continue;
+            }
+
+            $this->openApiSpec['paths'][$uri][strtolower($method)] = $this->generateOperation($route, $method);
         }
     }
 
-    protected function generateOperation($route, string $method): array
+    /**
+     * Generate OpenAPI operation for a route method.
+     */
+    protected function generateOperation(Route $route, string $method): array
     {
-        $action = $route->getAction();
-        $controller = $action['controller'] ?? null;
-        
         $operation = [
             'summary' => $this->generateSummary($route, $method),
             'description' => $this->generateDescription($route, $method),
             'operationId' => $this->generateOperationId($route, $method),
             'tags' => $this->generateOperationTags($route),
             'parameters' => $this->generateParameters($route),
-            'responses' => $this->generateResponses($route, $method)
+            'responses' => $this->generateResponses($route, $method),
         ];
 
         // Add request body for methods that typically have one
@@ -141,50 +194,64 @@ class ApiDocsGenerator
         return $operation;
     }
 
-    protected function generateSummary($route, string $method): string
+    /**
+     * Generate operation summary.
+     */
+    protected function generateSummary(Route $route, string $method): string
     {
-        $action = $route->getAction();
-        $controller = $action['controller'] ?? null;
+        $action = $route->getActionName();
+        $uri = $route->uri();
         
-        if ($controller) {
-            [$controllerClass, $methodName] = explode('@', $controller);
-            $controllerName = class_basename($controllerClass);
-            return ucfirst($method) . ' ' . str_replace('Controller', '', $controllerName);
+        // Try to extract from controller method name
+        if (Str::contains($action, '@')) {
+            [$controller, $methodName] = explode('@', $action);
+            $methodName = Str::title(Str::camel($methodName));
+            return "{$methodName} " . Str::title(strtolower($method));
         }
 
-        return ucfirst($method) . ' ' . $route->uri();
+        return Str::title(strtolower($method)) . ' ' . $uri;
     }
 
-    protected function generateDescription($route, string $method): string
+    /**
+     * Generate operation description.
+     */
+    protected function generateDescription(Route $route, string $method): string
     {
-        return "Generated description for {$method} {$route->uri()}";
+        return "Endpoint for {$method} {$route->uri()}";
     }
 
-    protected function generateOperationId($route, string $method): string
+    /**
+     * Generate operation ID.
+     */
+    protected function generateOperationId(Route $route, string $method): string
     {
         $uri = str_replace(['/', '{', '}'], ['_', '', ''], $route->uri());
-        return $method . '_' . $uri;
+        return strtolower($method) . '_' . $uri;
     }
 
-    protected function generateOperationTags($route): array
+    /**
+     * Generate operation tags.
+     */
+    protected function generateOperationTags(Route $route): array
     {
-        $action = $route->getAction();
-        $controller = $action['controller'] ?? null;
+        $uri = $route->uri();
+        $segments = explode('/', trim($uri, '/'));
         
-        if ($controller) {
-            [$controllerClass] = explode('@', $controller);
-            $controllerName = class_basename($controllerClass);
-            return [str_replace('Controller', '', $controllerName)];
+        if (count($segments) > 0) {
+            return [Str::title($segments[0])];
         }
 
         return ['Default'];
     }
 
-    protected function generateParameters($route): array
+    /**
+     * Generate parameters for the route.
+     */
+    protected function generateParameters(Route $route): array
     {
         $parameters = [];
-        
-        // Extract path parameters
+
+        // Path parameters
         preg_match_all('/\{([^}]+)\}/', $route->uri(), $matches);
         foreach ($matches[1] as $param) {
             $parameters[] = [
@@ -192,16 +259,19 @@ class ApiDocsGenerator
                 'in' => 'path',
                 'required' => true,
                 'schema' => [
-                    'type' => 'string'
+                    'type' => 'string',
                 ],
-                'description' => "The {$param} parameter"
+                'description' => "The {$param} parameter",
             ];
         }
 
         return $parameters;
     }
 
-    protected function generateRequestBody($route, string $method): array
+    /**
+     * Generate request body for the operation.
+     */
+    protected function generateRequestBody(Route $route, string $method): array
     {
         return [
             'required' => true,
@@ -209,24 +279,23 @@ class ApiDocsGenerator
                 'application/json' => [
                     'schema' => [
                         'type' => 'object',
-                        'properties' => [
-                            'data' => [
-                                'type' => 'object',
-                                'description' => 'Request data'
-                            ]
-                        ]
-                    ]
+                        'properties' => [],
+                    ],
                 ],
                 'application/x-www-form-urlencoded' => [
                     'schema' => [
-                        'type' => 'object'
-                    ]
-                ]
-            ]
+                        'type' => 'object',
+                        'properties' => [],
+                    ],
+                ],
+            ],
         ];
     }
 
-    protected function generateResponses($route, string $method): array
+    /**
+     * Generate responses for the operation.
+     */
+    protected function generateResponses(Route $route, string $method): array
     {
         $responses = [
             '200' => [
@@ -235,61 +304,13 @@ class ApiDocsGenerator
                     'application/json' => [
                         'schema' => [
                             'type' => 'object',
-                            'properties' => [
-                                'data' => [
-                                    'type' => 'object'
-                                ],
-                                'message' => [
-                                    'type' => 'string'
-                                ]
-                            ]
-                        ]
-                    ]
-                ]
-            ]
+                        ],
+                    ],
+                ],
+            ],
         ];
-
-        // Add method-specific responses
-        switch (strtoupper($method)) {
-            case 'POST':
-                $responses['201'] = [
-                    'description' => 'Resource created successfully',
-                    'content' => [
-                        'application/json' => [
-                            'schema' => [
-                                'type' => 'object',
-                                'properties' => [
-                                    'data' => ['type' => 'object'],
-                                    'message' => ['type' => 'string']
-                                ]
-                            ]
-                        ]
-                    ]
-                ];
-                break;
-            case 'DELETE':
-                $responses['204'] = [
-                    'description' => 'Resource deleted successfully'
-                ];
-                break;
-        }
 
         // Add common error responses
-        $responses['400'] = [
-            'description' => 'Bad request',
-            'content' => [
-                'application/json' => [
-                    'schema' => [
-                        'type' => 'object',
-                        'properties' => [
-                            'error' => ['type' => 'string'],
-                            'message' => ['type' => 'string']
-                        ]
-                    ]
-                ]
-            ]
-        ];
-
         if ($this->hasAuthMiddleware($route)) {
             $responses['401'] = [
                 'description' => 'Unauthorized',
@@ -298,127 +319,272 @@ class ApiDocsGenerator
                         'schema' => [
                             'type' => 'object',
                             'properties' => [
-                                'error' => ['type' => 'string'],
-                                'message' => ['type' => 'string']
-                            ]
-                        ]
-                    ]
-                ]
+                                'message' => [
+                                    'type' => 'string',
+                                    'example' => 'Unauthenticated.',
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
             ];
         }
+
+        $responses['422'] = [
+            'description' => 'Validation error',
+            'content' => [
+                'application/json' => [
+                    'schema' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'message' => [
+                                'type' => 'string',
+                            ],
+                            'errors' => [
+                                'type' => 'object',
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
 
         return $responses;
     }
 
-    protected function hasAuthMiddleware($route): bool
+    /**
+     * Generate security requirements for the operation.
+     */
+    protected function generateSecurity(Route $route): array
     {
-        $middleware = $route->middleware();
-        $authMiddleware = ['auth', 'auth:api', 'auth:sanctum', 'jwt.auth'];
+        $middleware = $route->gatherMiddleware();
         
-        return !empty(array_intersect($middleware, $authMiddleware));
-    }
-
-    protected function generateSecurity($route): array
-    {
-        $middleware = $route->middleware();
-        
-        if (in_array('auth:sanctum', $middleware)) {
-            return [['sanctum' => []]];
-        } elseif (in_array('auth:api', $middleware)) {
-            return [['bearerAuth' => []]];
-        } elseif (in_array('jwt.auth', $middleware)) {
-            return [['jwtAuth' => []]];
+        foreach ($middleware as $mw) {
+            if (Str::startsWith($mw, 'auth:')) {
+                $guard = Str::after($mw, 'auth:');
+                
+                if ($guard === 'sanctum') {
+                    return [['bearerAuth' => []]];
+                }
+                
+                if ($guard === 'api') {
+                    return [['bearerAuth' => []]];
+                }
+            }
+            
+            if ($mw === 'auth') {
+                return [['bearerAuth' => []]];
+            }
         }
-        
+
         return [['bearerAuth' => []]];
     }
 
+    /**
+     * Check if route has authentication middleware.
+     */
+    protected function hasAuthMiddleware(Route $route): bool
+    {
+        $middleware = $route->gatherMiddleware();
+        
+        foreach ($middleware as $mw) {
+            if (Str::startsWith($mw, 'auth') || $mw === 'auth') {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Generate tags from processed routes.
+     */
     protected function generateTags(): void
     {
         $tags = [];
         
-        foreach ($this->openApiSpec['paths'] as $path => $pathItem) {
-            foreach ($pathItem as $method => $operation) {
+        foreach ($this->openApiSpec['paths'] as $path => $operations) {
+            foreach ($operations as $operation) {
                 if (isset($operation['tags'])) {
                     foreach ($operation['tags'] as $tag) {
                         if (!in_array($tag, array_column($tags, 'name'))) {
                             $tags[] = [
                                 'name' => $tag,
-                                'description' => "Operations related to {$tag}"
+                                'description' => "Operations related to {$tag}",
                             ];
                         }
                     }
                 }
             }
         }
-        
+
         $this->openApiSpec['tags'] = $tags;
     }
 
-    protected function generateSecuritySchemes(): void
+    /**
+     * Validate the OpenAPI specification.
+     */
+    protected function validateSpecification(): bool
     {
-        $this->openApiSpec['components']['securitySchemes'] = [
-            'bearerAuth' => [
-                'type' => 'http',
-                'scheme' => 'bearer',
-                'bearerFormat' => 'JWT'
-            ],
-            'sanctum' => [
-                'type' => 'http',
-                'scheme' => 'bearer',
-                'description' => 'Laravel Sanctum token authentication'
-            ],
-            'jwtAuth' => [
-                'type' => 'http',
-                'scheme' => 'bearer',
-                'bearerFormat' => 'JWT',
-                'description' => 'JWT token authentication'
-            ]
-        ];
+        // Basic validation - check required fields
+        $required = ['openapi', 'info', 'paths'];
+        
+        foreach ($required as $field) {
+            if (!isset($this->openApiSpec[$field])) {
+                throw new \InvalidArgumentException("Missing required field: {$field}");
+            }
+        }
+
+        // Validate info object
+        if (!isset($this->openApiSpec['info']['title'])) {
+            throw new \InvalidArgumentException("Missing required field: info.title");
+        }
+
+        if (!isset($this->openApiSpec['info']['version'])) {
+            throw new \InvalidArgumentException("Missing required field: info.version");
+        }
+
+        return true;
     }
 
-    public function exportToJson(): string
+    /**
+     * Export specification to JSON.
+     */
+    public function exportToJson(bool $minify = false): string
     {
-        return json_encode($this->openApiSpec, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+        $flags = JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES;
+        
+        if ($minify) {
+            $flags = JSON_UNESCAPED_SLASHES;
+        }
+
+        return json_encode($this->openApiSpec, $flags);
     }
 
+    /**
+     * Export specification to YAML.
+     */
     public function exportToYaml(): string
     {
-        return Yaml::dump($this->openApiSpec, 4, 2, Yaml::DUMP_OBJECT_AS_MAP);
+        return Yaml::dump($this->openApiSpec, 10, 2);
     }
 
-    public function importFromJson(string $json): bool
+    /**
+     * Import specification from JSON.
+     */
+    public function importFromJson(string $json): void
     {
-        try {
-            $spec = json_decode($json, true);
-            if (json_last_error() !== JSON_ERROR_NONE) {
-                return false;
-            }
-            $this->openApiSpec = $spec;
-            return true;
-        } catch (\Exception $e) {
-            return false;
+        $spec = json_decode($json, true);
+        
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            throw new \InvalidArgumentException('Invalid JSON: ' . json_last_error_msg());
         }
+
+        $this->openApiSpec = $spec;
     }
 
-    public function importFromYaml(string $yaml): bool
+    /**
+     * Import specification from YAML.
+     */
+    public function importFromYaml(string $yaml): void
     {
         try {
             $spec = Yaml::parse($yaml);
             $this->openApiSpec = $spec;
-            return true;
         } catch (\Exception $e) {
-            return false;
+            throw new \InvalidArgumentException('Invalid YAML: ' . $e->getMessage());
         }
     }
 
-    public function getSpec(): array
+    /**
+     * Save specification to file.
+     */
+    public function saveToFile(string $path, string $format = 'json'): void
+    {
+        $directory = dirname($path);
+        
+        if (!File::isDirectory($directory)) {
+            File::makeDirectory($directory, 0755, true);
+        }
+
+        $content = $format === 'yaml' ? $this->exportToYaml() : $this->exportToJson();
+        File::put($path, $content);
+    }
+
+    /**
+     * Load specification from file.
+     */
+    public function loadFromFile(string $path): void
+    {
+        if (!File::exists($path)) {
+            throw new \InvalidArgumentException("File not found: {$path}");
+        }
+
+        $content = File::get($path);
+        $extension = pathinfo($path, PATHINFO_EXTENSION);
+
+        if (in_array($extension, ['yml', 'yaml'])) {
+            $this->importFromYaml($content);
+        } else {
+            $this->importFromJson($content);
+        }
+    }
+
+    /**
+     * Get the current OpenAPI specification.
+     */
+    public function getSpecification(): array
     {
         return $this->openApiSpec;
     }
 
-    public function setSpec(array $spec): void
+    /**
+     * Set the OpenAPI specification.
+     */
+    public function setSpecification(array $spec): void
     {
         $this->openApiSpec = $spec;
+    }
+
+    /**
+     * Check if caching should be used.
+     */
+    protected function shouldUseCache(): bool
+    {
+        return $this->config['cache']['enabled'] ?? false;
+    }
+
+    /**
+     * Get cache TTL.
+     */
+    protected function getCacheTtl(): int
+    {
+        return $this->config['cache']['ttl'] ?? 3600;
+    }
+
+    /**
+     * Clear the documentation cache.
+     */
+    public function clearCache(): void
+    {
+        Cache::forget('api-docs:spec:*');
+    }
+
+    /**
+     * Get route statistics.
+     */
+    public function getRouteStats(): array
+    {
+        $routes = $this->getApiRoutes();
+        
+        return [
+            'total_routes' => $routes->count(),
+            'methods' => $routes->flatMap(function (Route $route) {
+                return $route->methods();
+            })->countBy()->toArray(),
+            'middleware' => $routes->flatMap(function (Route $route) {
+                return $route->gatherMiddleware();
+            })->countBy()->toArray(),
+        ];
     }
 }

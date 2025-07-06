@@ -4,72 +4,94 @@ namespace XMultibyte\ApiDoc;
 
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Route;
+use XMultibyte\ApiDoc\Console\Commands\CleanDocsCommand;
+use XMultibyte\ApiDoc\Console\Commands\GenerateDocsCommand;
+use XMultibyte\ApiDoc\Console\Commands\GenerateStaticCommand;
+use XMultibyte\ApiDoc\Console\Commands\HelpCommand;
+use XMultibyte\ApiDoc\Console\Commands\ImportDocsCommand;
+use XMultibyte\ApiDoc\Console\Commands\PublishCommand;
+use XMultibyte\ApiDoc\Console\Commands\StatusCommand;
 
 class ApiDocsServiceProvider extends ServiceProvider
 {
-    public function register()
+    /**
+     * Register services.
+     */
+    public function register(): void
     {
         $this->mergeConfigFrom(
-            __DIR__.'/../config/api-docs.php', 'api-docs'
+            __DIR__.'/../config/api-docs.php',
+            'api-docs'
         );
 
         $this->app->singleton('api-docs', function ($app) {
-            return new ApiDocsGenerator($app['config']['api-docs']);
+            return new ApiDocsGenerator($app);
         });
-    
-        $this->app->singleton(StaticGenerator::class);
+
+        $this->app->singleton('api-docs.static', function ($app) {
+            return new StaticGenerator($app);
+        });
     }
 
-    public function boot()
+    /**
+     * Bootstrap services.
+     */
+    public function boot(): void
     {
+        $this->loadViewsFrom(__DIR__.'/../resources/views', 'api-docs');
+
         $this->publishes([
             __DIR__.'/../config/api-docs.php' => config_path('api-docs.php'),
-        ], 'config');
+        ], 'api-docs-config');
 
         $this->publishes([
             __DIR__.'/../resources/views' => resource_path('views/vendor/api-docs'),
-        ], 'views');
+        ], 'api-docs-views');
 
         $this->publishes([
             __DIR__.'/../resources/assets' => public_path('vendor/api-docs'),
-        ], 'assets');
+        ], 'api-docs-assets');
 
-        $this->loadViewsFrom(__DIR__.'/../resources/views', 'api-docs');
+        $this->publishes([
+            __DIR__.'/../config/api-docs.php' => config_path('api-docs.php'),
+            __DIR__.'/../resources/views' => resource_path('views/vendor/api-docs'),
+            __DIR__.'/../resources/assets' => public_path('vendor/api-docs'),
+        ], 'api-docs');
 
         $this->registerRoutes();
         $this->registerCommands();
     }
 
-    protected function registerRoutes()
+    /**
+     * Register the package routes.
+     */
+    protected function registerRoutes(): void
     {
-        Route::group([
-            'prefix' => config('api-docs.route_prefix', 'api-docs'),
-            'middleware' => config('api-docs.middleware', ['web']),
-            'namespace' => 'XMultibyte\ApiDoc\Http\Controllers',
-        ], function () {
-            Route::get('/', 'ApiDocsController@index')->name('api-docs.index');
-            Route::get('/swagger', 'ApiDocsController@swagger')->name('api-docs.swagger');
-            Route::get('/redoc', 'ApiDocsController@redoc')->name('api-docs.redoc');
-            Route::get('/rapidoc', 'ApiDocsController@rapidoc')->name('api-docs.rapidoc');
-            Route::get('/generate', 'ApiDocsController@generate')->name('api-docs.generate');
-            Route::post('/import', 'ApiDocsController@import')->name('api-docs.import');
-            Route::get('/export/{format}', 'ApiDocsController@export')->name('api-docs.export');
-            Route::get('/spec.json', 'ApiDocsController@specJson')->name('api-docs.spec.json');
-            Route::get('/spec.yaml', 'ApiDocsController@specYaml')->name('api-docs.spec.yaml');
-        });
+        if (! $this->app->routesAreCached()) {
+            Route::group([
+                'prefix' => config('api-docs.route_prefix', 'api-docs'),
+                'middleware' => config('api-docs.middleware', ['web']),
+                'namespace' => 'XMultibyte\ApiDoc\Http\Controllers',
+            ], function () {
+                $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
+            });
+        }
     }
 
-    protected function registerCommands()
+    /**
+     * Register the package commands.
+     */
+    protected function registerCommands(): void
     {
         if ($this->app->runningInConsole()) {
             $this->commands([
-                \XMultibyte\ApiDoc\Console\Commands\GenerateDocsCommand::class,
-                \XMultibyte\ApiDoc\Console\Commands\ImportDocsCommand::class,
-                \XMultibyte\ApiDoc\Console\Commands\CleanDocsCommand::class,
-                \XMultibyte\ApiDoc\Console\Commands\StatusCommand::class,
-                \XMultibyte\ApiDoc\Console\Commands\PublishCommand::class,
-                \XMultibyte\ApiDoc\Console\Commands\HelpCommand::class,
-                \XMultibyte\ApiDoc\Console\Commands\GenerateStaticCommand::class,
+                CleanDocsCommand::class,
+                GenerateDocsCommand::class,
+                GenerateStaticCommand::class,
+                HelpCommand::class,
+                ImportDocsCommand::class,
+                PublishCommand::class,
+                StatusCommand::class,
             ]);
         }
     }
