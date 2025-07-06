@@ -113,7 +113,7 @@ return [
 Generate API documentation from your Laravel routes:
 
 ```bash
-Basic generation
+# Basic generation
 php artisan api-docs:generate
 ```
 
